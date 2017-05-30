@@ -1,5 +1,18 @@
 //./gradlew getConflicts -Pbranches=FT-Rspec-Merge02
 
+buildscript {
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "org._10ne.gradle:rest-gradle-plugin:0.4.2"
+	}
+}
+
+apply plugin: "org.tenne.rest"
+
 import groovy.json.JsonSlurper
 import groovy.transform.Field
 
@@ -136,6 +149,19 @@ task executePegaUnitTests {
 
 			}
 		}
+	}
+}
+
+task restExample(type: org._10ne.gradle.rest.RestTask) {
+	httpMethod = 'post'
+	uri = 'https://pegadev-pw2017-burnd-alice.dev.pega.io/prweb/api/v1/merges/foo'
+	username = 'alexl'
+	password = 'rules'
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = {
+		//Configured content type is JSON and we let the client's handler parse the response for us
+		println it.text
+		//assert it.message == 'success'
 	}
 }
 
