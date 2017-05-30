@@ -41,9 +41,21 @@ task exportProduct{
 	}
 }
 
+task createRestorePoint {
+	doLast {
+		String rp = createRP(SOR_URL);
+		println rp
+		def rpFile = new File("restorepoint.txt");
+		rpFile.write(rp)
+	}
+}
+
 task revertToLastRestorePoint {
-
-
+	doLast {
+		def rpFile = new File("restorepoint.txt");
+		String rpName = rpFile.readLines();
+		rollbackToRP(SOR_URL, rpName)
+	}
 }
 
 task getConflicts {
@@ -152,6 +164,22 @@ Object branchesAPI(String url, String context, String subresource){
 Object mergesAPI(String url) {
 	String fullURL = url + '/prweb/api/v1/merges/' + mergeId
 	return callRestAPI(openHttpConnection(fullURL))
+}
+
+Object createRP(url) {
+	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/RestorePoint';
+	def resJson = callRestAPI(serviceUrl, "{\"action\":\"create\"}");
+	String rpName = resJson.pxRestorePoints.pxRestorePointName;
+	rpName = rpName.replaceAll('\\[','');
+	rpName = rpName.replaceAll("]","");
+	return rpName;
+}
+
+Object rollbackToRP(url, restorePointName) {
+	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/rollbackasync';
+	def resJson = callRestAPI(serviceUrl, "{\"action\":\"SystemRollback\", \"restorePointName\":\"" + restorePointName + "\", \"async\":\"false\"}");
+	System.out.println(resJson);
+	//return resJson.pxRestorePoints.pxRestorePointName.toString();
 }
 
 HttpURLConnection openHttpConnectiontoExecuteTests(url, String accessGroup, String locationOfTestResults, String testSuite){
