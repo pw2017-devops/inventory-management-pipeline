@@ -2,10 +2,14 @@
 
 import groovy.json.JsonSlurper
 import groovy.transform.Field
-ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
-//ant.importBuild 'prpcServiceUtils/scripts/samples/jenkins/Jenkins-export.xml'
 
-@Field String SOR_URL = 'http://http://192.168.99.100:9080'
+ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
+ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
+
+
+@Field String SOR_URL = 'https://lab0430.lab.pega.com'
+//@Field String SOR_URL = 'http://192.168.99.100:9080'
+//@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
 
 task importApplication {
 	doLast{
@@ -26,6 +30,7 @@ task exportApplication {
 task importProduct {
 	doLast {
 		println "Importing product"
+
 	}
 
 }
@@ -105,21 +110,81 @@ task getMergeStatus {
 	}
 }
 
+task executePegaUnitTests {
+
+	doLast {
+		println "Executing PegaUnit tests for application : " + application
+		def responseJson = pegaUnitAPI(SOR_URL, accessGroup, testLocation, '')
+
+		if (userNamePassword) {
+			ant.propertyfile(file: "gradle.properties") {
+				byte[] authEncBytes = Base64.encodeBase64(userNamePassword.getBytes());
+				String authStringEnc = new String(authEncBytes);
+				entry(key:"username_temp", value:authStringEnc)
+
+			}
+		}
+	}
+}
+
 /***** HELPERS *****/
+
+Object pegaUnitAPI(String url, String accessGroup, String locationOfTestResults, String testSuite){
+	String fullURL = url + '/prweb/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests'
+	// if (username) {
+	// 	def http = new RESTClient(fullURL)
+	// 	http.client.addRequestInterceptor(new HttpRequestInterceptor() {
+ //    		void process(HttpRequest httpRequest, HttpContext httpContext) {
+ //        		httpRequest.addHeader('Authorization', 'Basic ' + username.bytes.encodeBase64().toString())
+ //    		}
+	// 	})
+	// 	def response = http.get(path: "aResource")
+	// 	return response
+	// } else {
+		return callRestAPI(openHttpConnectiontoExecuteTests(fullURL, accessGroup, locationOfTestResults, testSuite))
+}
 
 Object branchesAPI(String url, String context, String subresource){
 	String fullURL = url + '/prweb/api/v1/branches/' + context + '/' + subresource
-	return callRestAPI(fullURL)
+	return callRestAPI(openHttpConnection(fullURL))
 }
 
 Object mergesAPI(String url) {
 	String fullURL = url + '/prweb/api/v1/merges/' + mergeId
-	return callRestAPI(fullURL)
+	return callRestAPI(openHttpConnection(fullURL))
 }
 
-Object callRestAPI(url) {
+HttpURLConnection openHttpConnectiontoExecuteTests(url, String accessGroup, String locationOfTestResults, String testSuite){
+	HttpURLConnection httpConn = openHttpConnection(url);
+	httpConn.addRequestProperty("AccessGroup", accessGroup);
+	httpConn.addRequestProperty("LocationOfTestResults", locationOfTestResults);
+	httpConn.addRequestProperty("TestSuite", testSuite);
+	return httpConn;
+}
+
+HttpURLConnection openHttpConnection(url) {
+	
+		HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();	
+	
+
+	return httpConn;
+}
+
+
+
+Object callRestAPI(HttpURLConnection httpConn) {
 	String responseText;
-	HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();
+	//HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();
+	// if (username) {
+	// 	def http = new RESTClient('')
+ //    	http.headers['Authorization'] = 'Basic '+username.getBytes('iso-8859-1').encodeBase64()
+ //    	println "HERE 3423"
+	// } else {
+	// 	byte[] authEncBytes = Base64.encodeBase64(username.getBytes());
+	// 	String authStringEnc = new String(authEncBytes);
+ //    	httpConn.addRequestProperty("Authorization", "Basic " + authStringEnc);
+ //    }
+
 	InputStream responseStream;
 	if (httpConn.getResponseCode() == 400 || httpConn.getResponseCode() == 404) {
 		responseStream = httpConn.getErrorStream();
