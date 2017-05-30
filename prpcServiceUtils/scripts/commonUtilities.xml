@@ -1,0 +1,44 @@
+<!--
+	
+                          Copyright 2013  Pegasystems Inc.                           
+                                All rights reserved.                                 
+	This software has been provided pursuant to a License Agreement containing restrictions
+	on its use. The software contains valuable trade secrets and proprietary information of
+	Pegasystems Inc and is protected by federal copyright law.It may not be copied, modified,
+	translated or distributed in any form or medium, disclosed to third parties or used in 
+	any manner not provided for in  said License Agreement except with  written
+	authorization from Pegasystems Inc.
+	-->
+<project name="commonUtilities" xmlns:pega="pega:/pega.com" 
+													xmlns:ac="ac:/antcontrib.org">
+
+	<!--  Finds the system name from pr_data_admin and sets the property 'current.system.name' -->
+	<target name="_findSystemName">
+
+		<condition property="schema.name" value="${data.schema}.">
+			<and>
+				<isset property="data.schema"/>
+				<not>
+					<equals arg1="${data.schema}" arg2="" />
+				</not>
+			</and>
+		</condition>
+		<!-- Query for a system name with requestors -->
+		<property name="system.name.sql" value="select max(s.pySystemName) from ${schema.name}pr_data_admin s inner join ${schema.name}pr_data_admin r
+			on s.pySystemName = r.pySystemName
+			where s.pxobjclass = 'Data-Admin-System' and r.pxObjClass = 'Data-Admin-Requestor'" />
+		<echo message="${system.name.sql}" />
+		
+	    <pega:sql 
+	    	url="${pega.jdbc.url}" 
+	        user="${pega.jdbc.username}" 
+	        password="${pega.jdbc.password}" 
+	        properties="${database.connection.properties}"
+	        drivers="${pega.jdbc.driver.jar}"
+	        driverclass="${pega.jdbc.driver.class}"
+	        query="${system.name.sql}"
+	        result="current.system.name"/>	
+
+	</target>
+
+</project>

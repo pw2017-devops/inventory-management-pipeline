@@ -1,0 +1,225 @@
+<project name="prpcServiceUtils" default="help" 	xmlns:pega="pega:/pega.com" 
+												xmlns:ac="ac:/antcontrib.org">
+
+	<!--
+		
+	                          Copyright 2017  Pegasystems Inc.                           
+	                                All rights reserved.                                 
+		This software has been provided pursuant to a License Agreement containing restrictions
+		on its use. The software contains valuable trade secrets and proprietary information of
+		Pegasystems Inc and is protected by federal copyright law.It may not be copied, modified,
+		translated or distributed in any form or medium, disclosed to third parties or used in 
+		any manner not provided for in  said License Agreement except with  written
+		authorization from Pegasystems Inc. -->
+
+	<!-- ANTCONTRIB LIBRARY -->
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" uri="ac:/antcontrib.org">
+		<classpath>
+			<pathelement location="${basedir}/../lib/ant-contrib-1.0b3.jar"/>
+		</classpath>
+	</taskdef>
+	<!-- PEGA Custom Tasks -->
+	<taskdef resource="com/pega/pegarules/util/anttasks/tasks.properties" uri="pega:/pega.com">
+		<classpath>
+			<fileset dir="${basedir}/../lib">
+				<include name="*.jar" />
+				<exclude name="ant-contrib-1.0b3.jar"/>
+			</fileset>
+			<fileset dir="${basedir}/..">
+				<include name="prdeploy.jar" />
+			</fileset>
+		</classpath>
+	</taskdef>
+	
+	<property name="pega.install.root" value="${basedir}"/>
+	<property name="pega.archives" value="${pega.install.root}/../../archives/"/>	
+	<property name="pega.config" value="${pega.install.root}/../config/"/>
+	<!-- folder for auto generated property files-->
+	<property name="generatedFolder" value="${basedir}/generated"/>
+	<property name="log4jConfigFile" location="../lib/log4j2.xml"/>
+	<property name="log4jErrorFile" value="${pega.install.root}/logs/prpcServiceUtils-Errors.log"/>
+	
+	
+	<!-- property to denote if the operation is on single or multiple systems -->
+	<condition property="prpcserviceutils.number.of.systems" value="multiple" else="single">
+		<isset property="prpcserviceutils.connection.filepath"/>
+	</condition>
+	
+	<!-- property to denote operation specific file is provided -->
+		<condition property="local.operation.specific.file.path" value="${operation.specific.file.path}" else="">
+			<isset property="operation.specific.file.path"/>
+		</condition>
+	<!-- path for generated files. -->
+	<path id="propertyfiles.path">
+		<fileset dir="${generatedFolder}" casesensitive="no">
+			<include name="*.properties"/>
+		</fileset>
+	</path>
+
+	<import file="../commonUtilities.xml"/>
+	
+	<property name="pega.install.root" value="${basedir}"/>
+	<condition property="prpc.service.utils.property.filepath" value="${prpc.service.utils.custom.property.filepath}" else="${basedir}/prpcServiceUtils.properties">
+		<isset property="prpc.service.utils.custom.property.filepath"/>
+	</condition>
+	
+	<tstamp>
+		<format property="pega.patchdate" pattern="yyyy-MM-dd HH.mm zz" />
+	</tstamp>
+	<ac:if>
+	               <or>
+	                   <equals arg1="${ant.java.version}" arg2="1.6"/>
+	                   <equals arg1="${ant.java.version}" arg2="1.7"/>
+	               </or>
+	               <ac:then>
+	                   <condition property="jvm.arg.mem.max.temp" value="${jvm.arg.mem.max}" else="-Xmx1280m">
+	                       <isset property="jvm.arg.mem.max"/>
+	                   </condition>
+	                   <condition property="jvm.arg.mem.maxpermsize.temp" value="${jvm.arg.mem.maxpermsize}" else="-XX:MaxPermSize=512m">
+	                       <isset property="jvm.arg.mem.maxpermsize"/>
+	                   </condition>
+	               </ac:then>
+	               <ac:else>
+	                   <condition property="jvm.arg.mem.max.temp" value="${jvm.arg.mem.max}" else="-XX:MaxHeapSize=1280m">
+	                       <isset property="jvm.arg.mem.max"/>
+	                   </condition>
+	                   <condition property="jvm.arg.mem.maxpermsize.temp" value="${jvm.arg.mem.maxpermsize}" else="-XX:MaxMetaspaceSize=512m">
+	                       <isset property="jvm.arg.mem.maxpermsize"/>
+	                   </condition>
+	               </ac:else>
+	 </ac:if>
+	 <property name="jvm.args" value="${jvm.arg.mem.max.temp} ${jvm.arg.mem.maxpermsize.temp}"/>
+     <echo message="*** JVM Arguments ${jvm.args} ***"/>
+	<path id="prpc.base.path">
+		<pathelement path="${pega.install.root}/../prdeploy.jar"/>	
+		<fileset dir="${pega.install.root}/../lib/">
+			<include name="*.jar"/>
+			<include name="*.xml"/>
+		</fileset>		
+	</path>
+	
+	
+	<target name="help">
+		<echo message="Update invocation of this script to to run one of the utilities :"/>
+		<echo message="export | import "/>
+	</target>
+
+	
+
+	<target name="performOperation" depends="-init, -processInstances, -cleanup">
+		<echo message="PegaRULES Process Commander ${prpc.service.util.action} complete."/>
+	</target>
+
+	<!-- Internal targets below. DO NOT CALL THESE EXTERNALLY - CONTENTS MAY CHANGE AT ANY TIME -->
+	<target name="-init">
+		<pega:readmanifestfile prdeploypath="${basedir}/../prdeploy.jar" pegaBuildDate="pegaBuildDate.value" specificationVersion="specificationVersion.value"/>
+																		
+		<echo message="******************************************************************"/>
+		<echo message="Build date : ${pegaBuildDate.value} "/>
+		<echo message="Pega7 platform version : ${specificationVersion.value} "/>
+		<echo message="******************************************************************"/>
+		<delete dir="${basedir}/generated" failonerror="false"/>
+		<mkdir dir="${basedir}/generated"/>
+		
+		<tstamp>
+			<format property="install.datetime" pattern="dd-MMMM-yyyy-HH.mm.ss" locale="en,US"/>
+		</tstamp>
+		<fail message="Properties File Not Found: ${prpc.service.utils.property.filepath}">
+		<condition>
+			<not>
+				<available file="${prpc.service.utils.property.filepath}" />
+			</not>
+		</condition>
+		</fail>		
+		<pega:propertyparser propfile="${prpc.service.utils.property.filepath}" echo="true"/>
+		
+		<condition property="user.temp.dir.root" value="${user.temp.dir}">
+			<and>
+				<isset property="user.temp.dir"/>
+				<not>
+					<equals arg1="${user.temp.dir}" arg2="" />
+				</not>
+				<available file="${user.temp.dir}" type="dir" />
+			</and>
+		</condition>
+		<condition property="install.temp.dir.root" 	value="${user.temp.dir.root}" 
+																	else="${java.io.tmpdir}">
+			<isset property="user.temp.dir.root"/>
+		</condition>
+		<condition property="artifacts.dir" 	value="${service.responseartifacts.dir}" else="logs">
+			<and>
+				<isset property="service.responseartifacts.dir"/>
+				<not>
+					<equals arg1="${service.responseartifacts.dir}" arg2="" />
+				</not>
+			</and>
+		</condition>
+		
+		<property name="install.temp.dir" value="${install.temp.dir.root}/PegaInstallTemp-${install.datetime}"/>
+		<mkdir dir="${install.temp.dir}"/>
+		<pega:hasenoughspace partition="${install.temp.dir.root}" needed="1000000" property="enough" available="free"/>
+		<condition property="stop" value="true">
+			<and>		
+				<equals arg1="${enough}" arg2="false" />
+				<equals arg1="${success}" arg2="true" />
+			</and>
+		</condition>
+		<fail message="  Only : ${free} KB of free space found in '${install.temp.dir.root}' - Not enough for Temp Directory install (~ 1000000 KB)" if="stop"/>
+	</target>
+
+	
+	<target name="-processInstances">
+		<echo message="Performing ${prpc.service.util.action} on ${prpcserviceutils.number.of.systems} instance(s)"/>
+		<property name="arg.line" value=" -action ${prpc.service.util.action} -propFileDir ${generatedFolder} -poolSize ${prpcserviceutils.pool.size} -requestTimeOut ${prpcserviceutils.request.timeout} -tempDir ${install.temp.dir} -artifactsDir ${artifacts.dir}"/>
+		<pega:echoargline line="${arg.line}"/>
+		<ac:if>
+			<equals arg1="${prpcserviceutils.number.of.systems}" arg2="multiple" />
+			<ac:then>
+				<echo message="Reading connection information from ${prpcserviceutils.connection.filepath}"/>
+				<pega:propertyfilegenerator basePropertyFile="${prpc.service.utils.property.filepath}" connectionPropertiesFile="${prpcserviceutils.connection.filepath}" generatedFolderPath="${generatedFolder}" systemFilesSuffix="prpcServiceUtils.properties" pathToSystemProperties="${basedir}" generatedFilesSuffix="prpcServiceUtils.properties" echo="true" operationName="${prpc.service.util.action}" opSpecificFile="${local.operation.specific.file.path}"/>
+				<antcall target="_callService"/>		
+				
+			</ac:then>
+		<ac:else>
+			<!--generate connection.properties-->
+			<property name="connection.properties.file.path" value="${generatedFolder}/generated-connection.properties"/>
+			<propertyfile file="${connection.properties.file.path}" >
+				<entry key="DefaultSystem.pega.rest.server.url" value="${pega.rest.server.url}"/>
+			</propertyfile>
+			<pega:propertyfilegenerator basePropertyFile="${prpc.service.utils.property.filepath}" connectionPropertiesFile="${connection.properties.file.path}" generatedFolderPath="${generatedFolder}" generatedFilesSuffix="prpcServiceUtils.properties" echo="true" operationName="${prpc.service.util.action}" opSpecificFile="${local.operation.specific.file.path}"/>
+			<antcall target="_callService"/>
+		</ac:else>
+		</ac:if>
+	</target>
+	
+	<target name="_callService" >	
+		
+		<ac:urlencode name="log4j2.file.location" location="${log4jConfigFile}" />
+		<java classname="com.pega.pegarules.serviceclient.ClientMain" failonerror="true" fork="true" dir="${pega.install.root}">
+			<classpath refid="prpc.base.path"/>
+			<jvmarg value="${jvm.arg.mem.max.temp}"/>
+			<jvmarg value="${jvm.arg.mem.maxpermsize.temp}"/>
+			<jvmarg value="-Dlog4j.configurationFile=file:///${log4j2.file.location}"/>
+			<jvmarg value="-Dlogfile.timestamp=${logfile.timestamp}"/>
+			<arg value="-action"/>
+			<arg value="${prpc.service.util.action}"/>
+			<arg value="-propFileDir"/>
+			<arg value="${generatedFolder}"/>
+			<arg value="-poolSize"/>
+			<arg value="${prpcserviceutils.pool.size}"/>			
+			<arg value="-requestTimeOut"/>
+			<arg value="${prpcserviceutils.request.timeout}"/>
+			<arg value="-tempDir"/>
+			<arg value="${install.temp.dir}"/>
+			<arg value="-artifactsDir"/>
+			<arg value="${artifacts.dir}"/>
+		</java>		
+	</target>
+
+	
+	<target name="-cleanup">
+		<echo message="Cleaning up temp directory..."/>
+		<delete dir="${install.temp.dir}"/>
+	</target>
+
+</project>

@@ -1,0 +1,137 @@
+//./gradlew getConflicts -Pbranches=FT-Rspec-Merge02
+
+import groovy.json.JsonSlurper
+import groovy.transform.Field
+ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
+//ant.importBuild 'prpcServiceUtils/scripts/samples/jenkins/Jenkins-export.xml'
+
+@Field String SOR_URL = 'http://http://192.168.99.100:9080'
+
+task importApplication {
+	doLast{
+		println "Importing application"
+
+	}
+
+}
+
+task exportApplication {
+	doLast {
+		println "Exporting application"
+	}
+	
+
+}
+
+task importProduct {
+	doLast {
+		println "Importing product"
+	}
+
+}
+
+task exportProduct{
+	doLast {
+		println "Exporting product"
+	}
+}
+
+task revertToLastRestorePoint {
+
+
+}
+
+task getConflicts {
+	doLast {
+		def responseJson = branchesAPI(SOR_URL,branches,'conflicts')
+		//MERGE_CONFLICTS_COUNT = responseJson.conflictsCount
+		ant.propertyfile(file: "gradle.properties") {
+			entry(key:"mergeConflictsCount", value:responseJson.conflictsCount)
+		}
+		if(!responseJson.conflictsCount.equals("0")){
+			ant.propertyfile(file: "gradle.properties") {
+				entry(key:"mergeConflicts", value:responseJson.conflicts)
+			}
+			println 'Found conflicts ' + responseJson.conflicts
+			throw new BuildCancelledException('Number of conflicts : ' + responseJson.conflictsCount)
+		}
+	}
+}
+
+task merge {
+	doLast {
+		def responseJson = branchesAPI(SOR_URL,branches,'merge')
+		//MERGE_ID = responseJson.ID
+		ant.propertyfile(file: "gradle.properties") {
+			entry(key:"mergeId", value:responseJson.ID)
+		}
+		//ant.properties['env.MERGE_ID'] = responseJson.ID
+		println 'Merge Response Queue ID : ' + responseJson.ID
+	}
+}
+
+task getMergeStatus {
+	doLast {
+		println "Trying to get merge status for : " + mergeId
+		def responseJson = mergesAPI(SOR_URL)
+		println "Get Merge Status Message : " + responseJson.statusMessage
+		if(responseJson.statusMessage.equals("Processing")){
+			//Merge still Processing
+			ant.propertyfile(file: "gradle.properties") {
+				entry(key:"mergeStatus", value:responseJson.statusMessage)
+			}
+			//MERGE_STATUS = "Processing"
+			throw new BuildCancelledException('The merge status for ' + mergeId + 'is still ' + responseJson.statusMessage)
+		} else if (responseJson.statusMessage.equals("Success")){
+			//Merge Succesful
+			ant.propertyfile(file: "gradle.properties") {
+				entry(key:"mergeStatus", value:responseJson.statusMessage)
+			}
+			//MERGE_STATUS = "Success"
+			println 'Merge is complete for : ' + mergeId + '.. Status Message : ' + responseJson.statusMessage
+		} else {
+			//Possible Conflicts?
+			ant.propertyfile(file: "gradle.properties") {
+				entry(key:"mergeStatus", value:responseJson.statusMessage)
+			}
+			println 'Error while performing merge for :' + mergeId 
+			println 'Errors : ' + responseJson.errors
+			if(responseJson.conflictsCount > 0){
+				println 'Conflicts : ' + responseJson.conflicts
+			}
+			//MERGE_STATUS = "Error"
+			throw new BuildCancelledException('Error while merging for ' + mergeId + responseJson.statusMessage)
+		}
+	}
+}
+
+/***** HELPERS *****/
+
+Object branchesAPI(String url, String context, String subresource){
+	String fullURL = url + '/prweb/api/v1/branches/' + context + '/' + subresource
+	return callRestAPI(fullURL)
+}
+
+Object mergesAPI(String url) {
+	String fullURL = url + '/prweb/api/v1/merges/' + mergeId
+	return callRestAPI(fullURL)
+}
+
+Object callRestAPI(url) {
+	String responseText;
+	HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();
+	InputStream responseStream;
+	if (httpConn.getResponseCode() == 400 || httpConn.getResponseCode() == 404) {
+		responseStream = httpConn.getErrorStream();
+	} else {
+		responseStream = httpConn.getInputStream();
+	}
+	responseText = responseStream.getText()
+	def responseJson = new JsonSlurper().parseText(responseText)
+	if(responseJson.errors){
+		//println "callRestAPI error :" + responseJson.errors
+		throw new BuildCancelledException("callRestAPI error :" + responseJson.errors.ID + "-" + responseJson.errors.message)
+	} else {
+		return responseJson
+	}
+}
