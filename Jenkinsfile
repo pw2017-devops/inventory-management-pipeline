@@ -7,7 +7,7 @@ pipeline {
             steps {
                 echo 'Determine Conflicts'
                 script {
-                 try{
+                   try{
                     //will need to redirect std:out using something like this
                     //def out = sh script: './consoleOut.txt', returnStdout: true
                     sh './gradlew getConflicts -Pbranches=' + branchName
@@ -46,7 +46,7 @@ pipeline {
             echo 'Perform Merge'
             script {
                 try{
-                     // sh './gradlew merge -Pbranches=' + branchName
+                    // sh './gradlew merge -Pbranches=' + branchName
                     // echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
                     // timeout(time: 5, unit: 'MINUTES') {
                     //     echo "Setting the timeout for 1 min.."
@@ -57,7 +57,7 @@ pipeline {
                     //         sleep(time: 30, unit: 'SECONDS')
                     //     }
                     // }
-                    }  catch(ex){
+                }  catch(ex){
                     //Notify here if the merge fails
                     echo 'Failure during merging: ' + ex.toString()
                     emailext subject: '$JOB_NAME $BUILD_NUMBER merge has failed',
@@ -89,5 +89,4 @@ pipeline {
             echo 'Deploying....'
         }
     }
-}
 }
