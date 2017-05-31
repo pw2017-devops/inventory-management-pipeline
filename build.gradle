@@ -53,7 +53,7 @@ task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	description 'Create restore point.'
 
 	def targetURL = findProperty("targetURL")
-	uri = "${targetURL}/prweb/PRRestService/SystemManagement/V2/RestorePoint"
+	uri = "${targetURL}/PRRestService/SystemManagement/V2/RestorePoint"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
@@ -81,7 +81,7 @@ task revertToLastRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 
 	def restorepointName = resultHandler.getResult("restorepoint.name")
 	def targetURL = findProperty("targetURL")
-	uri = "${targetURL}/prweb/PRRestService/SystemManagement/V2/rollback/${restorepointName}?action=SystemRollback"
+	uri = "${targetURL}/PRRestService/SystemManagement/V2/rollback/${restorepointName}?action=SystemRollback"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
@@ -109,7 +109,7 @@ task getConflicts(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 
 	httpMethod = 'get'
-	uri = "${targetURL}/prweb/api/v1/branches/${branch}/conflicts"
+	uri = "${targetURL}/api/v1/branches/${branch}/conflicts"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
@@ -140,7 +140,7 @@ task merge(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 
 	httpMethod = 'get'
-	uri = "${targetURL}/prweb/api/v1/branches/${branch}/merge"
+	uri = "${targetURL}/api/v1/branches/${branch}/merge"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
@@ -167,7 +167,7 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 
 	httpMethod = 'get'
-	uri = "${targetURL}/prweb/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
+	uri = "${targetURL}/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
