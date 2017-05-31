@@ -19,7 +19,6 @@ import groovy.transform.Field
 ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
 
-
 @Field String SOR_URL = 'https://lab0430.lab.pega.com'
 //@Field String SOR_URL = 'http://192.168.99.100:9080'
 //@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
@@ -100,6 +99,33 @@ task merge {
 	}
 }
 
+task merge2(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Do some merging.'
+
+	def branch = findProperty("branch")
+	def targetURL = findProperty("targetURL")
+
+	httpMethod = 'get'
+	uri = "${targetURL}/prweb/api/v1/branches/${branch}/merge"
+
+	username = project.pegaUsername
+	password = project.pegaPassword
+
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = {
+		// Once we get a valid response, we can pick apart
+		println it.toString()
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty("branch") || !project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-Pbranch' and '-PtargetURL'")
+		}
+	}
+}
+
 task getMergeStatus {
 	doLast {
 		println "Trying to get merge status for : " + mergeId
@@ -149,19 +175,6 @@ task executePegaUnitTests {
 
 			}
 		}
-	}
-}
-
-task restExample(type: org._10ne.gradle.rest.RestTask) {
-	httpMethod = 'post'
-	uri = 'https://pegadev-pw2017-burnd-alice.dev.pega.io/prweb/api/v1/merges/foo'
-	username = 'alexl'
-	password = 'rules'
-	contentType = groovyx.net.http.ContentType.JSON
-	responseHandler = {
-		//Configured content type is JSON and we let the client's handler parse the response for us
-		println it.text
-		//assert it.message == 'success'
 	}
 }
 
