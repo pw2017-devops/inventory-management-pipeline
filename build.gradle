@@ -7,7 +7,8 @@ ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
 
 
-@Field String SOR_URL = 'https://lab0430.lab.pega.com'
+@Field String SOR_URL = 'http://localhost:9090'
+//@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
 //@Field String SOR_URL = 'http://192.168.99.100:9080'
 //@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
 
@@ -44,7 +45,6 @@ task exportProduct{
 task createRestorePoint {
 	doLast {
 		String rp = createRP(SOR_URL);
-		println rp
 		def rpFile = new File("restorepoint.txt");
 		rpFile.write(rp)
 	}
@@ -123,7 +123,6 @@ task getMergeStatus {
 }
 
 task executePegaUnitTests {
-
 	doLast {
 		println "Executing PegaUnit tests for application : " + application
 		def responseJson = pegaUnitAPI(SOR_URL, accessGroup, testLocation, '')
@@ -167,19 +166,23 @@ Object mergesAPI(String url) {
 }
 
 Object createRP(url) {
-	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/RestorePoint';
-	def resJson = callRestAPI(serviceUrl, "{\"action\":\"create\"}");
+	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/RestorePoint/';
+	HttpURLConnection httpConn = openHttpConnectionWithRequestParams(serviceUrl, "{\"action\":\"create\"}");
+	def resJson = callRestAPI(httpConn);	
 	String rpName = resJson.pxRestorePoints.pxRestorePointName;
-	rpName = rpName.replaceAll('\\[','');
-	rpName = rpName.replaceAll("]","");
+	rpName = strip(rpName);
+	println "Created restore point: " + rpName;
 	return rpName;
 }
 
 Object rollbackToRP(url, restorePointName) {
-	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/rollbackasync';
-	def resJson = callRestAPI(serviceUrl, "{\"action\":\"SystemRollback\", \"restorePointName\":\"" + restorePointName + "\", \"async\":\"false\"}");
-	System.out.println(resJson);
-	//return resJson.pxRestorePoints.pxRestorePointName.toString();
+	restorePointName = strip(restorePointName);
+	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/rollback/' + restorePointName + '?action=SystemRollback';
+	println serviceUrl;
+	HttpURLConnection httpConn = openHttpConnectionWithRequestParams(serviceUrl, "");
+	def resJson = callRestAPI(httpConn);
+	println resJson;
+	println "Rolledback to restore point: " + restorePointName;
 }
 
 HttpURLConnection openHttpConnectiontoExecuteTests(url, String accessGroup, String locationOfTestResults, String testSuite){
@@ -191,14 +194,31 @@ HttpURLConnection openHttpConnectiontoExecuteTests(url, String accessGroup, Stri
 }
 
 HttpURLConnection openHttpConnection(url) {
-	
-		HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();	
-	
-
+	HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();	
 	return httpConn;
 }
 
+HttpURLConnection openHttpConnectionWithRequestParams(url, requestParams) {
+	HttpURLConnection httpConn = openHttpConnection(url);
+	
+	String encoding = new sun.misc.BASE64Encoder().encode(username.getBytes());
+	httpConn.setRequestProperty("Authorization", "Basic " + encoding);
+	httpConn.setDoOutput(true);	
+	httpConn.setRequestProperty("Content-Type", "application/json");
+	httpConn.setRequestProperty("Accept", "application/json");
+	httpConn.setRequestMethod("POST");
+	
+	OutputStreamWriter wr = new OutputStreamWriter(httpConn.getOutputStream());
+	wr.write(requestParams);
+	wr.flush();
+	return httpConn;
+}
 
+String strip(str) {
+	str = str.replaceAll('\\[','');
+	str = str.replaceAll(']','');
+	return str;
+}
 
 Object callRestAPI(HttpURLConnection httpConn) {
 	String responseText;
@@ -214,7 +234,7 @@ Object callRestAPI(HttpURLConnection httpConn) {
  //    }
 
 	InputStream responseStream;
-	if (httpConn.getResponseCode() == 400 || httpConn.getResponseCode() == 404) {
+	if (httpConn.getResponseCode() == 400 || httpConn.getResponseCode() == 404 || httpConn.getResponseCode() == 500) {
 		responseStream = httpConn.getErrorStream();
 	} else {
 		responseStream = httpConn.getInputStream();
