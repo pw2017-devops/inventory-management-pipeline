@@ -1,25 +1,13 @@
 
 pipeline {
     agent any;
-    
+
     stages {
         stage('Branch Merge Conflicts'){
             steps {
                 echo 'Determine Conflicts'
                 script {
-                   try{
-                    //will need to redirect std:out using something like this
-                    //def out = sh script: './consoleOut.txt', returnStdout: true
-                    sh './gradlew getConflicts -Pbranches=' + branchName
-                    //Notify here if there are any conflicts
-                    //placeholder value for parsed number
-                    } catch (Exception ex) {
-                        echo 'Failure during conflict detection: ' + ex.toString()
-                        emailext subject: '$JOB_NAME $BUILD_NUMBER has failed',
-                        body: 'Your build $JOB_NAME $BUILD_NUMBER has failed $BUILD_URL/console', 
-                        to: notificationSendToID
-                        throw ex
-                    }
+
                 }
             }
         }
@@ -39,13 +27,12 @@ pipeline {
                 }
             }
         }
-    }
-    stage('Merge Branch'){
-        steps{
+        stage('Merge Branch'){
+            steps{
 
-            echo 'Perform Merge'
-            script {
-                try{
+                echo 'Perform Merge'
+                script {
+                    try{
                     // sh './gradlew merge -Pbranches=' + branchName
                     // echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
                     // timeout(time: 5, unit: 'MINUTES') {
@@ -57,7 +44,7 @@ pipeline {
                     //         sleep(time: 30, unit: 'SECONDS')
                     //     }
                     // }
-                }  catch(ex){
+                    }  catch(ex){
                     //Notify here if the merge fails
                     echo 'Failure during merging: ' + ex.toString()
                     emailext subject: '$JOB_NAME $BUILD_NUMBER merge has failed',
@@ -67,26 +54,26 @@ pipeline {
                 }
             }
         }
-    }
-    stage('Continuous Integration') {
-        steps {
+        stage('Continuous Integration') {
+            steps {
 
-            sh 'echo Exporting application from Dev environment $DEV_ENV'
-            sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$DEV_ENV/PRRestService -Dpega.rest.username=$PIPELINE_USER -Dpega.rest.password=$PIPELINE_USER_PASSWORD -Dexport.archiveName=$APPLICATION_NAME_$APPLICATION_VERSION.zip -Dexport.applicationName=$APPLICATION_NAME -Dexport.applicationVersion=$APPLICATION_VERSION -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'                
-            sh 'ls -lh $WORKSPACE/export'
+                sh 'echo Exporting application from Dev environment $DEV_ENV'
+                sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$DEV_ENV/PRRestService -Dpega.rest.username=$PIPELINE_USER -Dpega.rest.password=$PIPELINE_USER_PASSWORD -Dexport.archiveName=$APPLICATION_NAME_$APPLICATION_VERSION.zip -Dexport.applicationName=$APPLICATION_NAME -Dexport.applicationVersion=$APPLICATION_VERSION -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'                
+                sh 'ls -lh $WORKSPACE/export'
 
+
+            }
 
         }
-
-    }
-    stage('Continuous Delivery') {
-        steps {
-            echo 'Testing..'
+        stage('Continuous Delivery') {
+            steps {
+                echo 'Testing..'
+            }
         }
-    }
-    stage('Deployment') {
-        steps {
-            echo 'Deploying....'
+        stage('Deployment') {
+            steps {
+                echo 'Deploying....'
+            }
         }
     }
 }
