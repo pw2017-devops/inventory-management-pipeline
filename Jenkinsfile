@@ -3,20 +3,11 @@ pipeline {
 
     agent any 
     stages {
-        stage('Initialize') {
-            steps {
-                echo 'Initialize Build'
-                echo 'Copying over gradle scripts since git doesn\'t seem to work'
-                sh 'cp -R $PIPELINE_HOME/* .'
-
-            }
-
-        }
-        stage('Conflicts'){
+        stage('Branch Merge Conflicts'){
             steps {
                 echo 'Determine Conflicts'
                 script {
-                   try{
+                 try{
                     //will need to redirect std:out using something like this
                     //def out = sh script: './consoleOut.txt', returnStdout: true
                     sh './gradlew getConflicts -Pbranches=' + branchName
@@ -35,21 +26,21 @@ pipeline {
         stage('PegaUnit Tests'){
             steps {
                 echo 'Execute tests'
+                build 'ExecutePegaUnitTests'
                 //Notify here if the tests fail
                 script {
-                    try{
-                   //sh './gradlew executePegaUnitTests -PaccessGroup=' + accessGroup
-                   } catch (ex) {
-                    echo 'Failure during testing: ' + ex.toString()
-                    emailext subject: '$JOB_NAME $BUILD_NUMBER tests have failed',
-                    body: 'Your build $JOB_NAME $BUILD_NUMBER has failing tests $BUILD_URL/console', 
-                    to: notificationSendToID
-                    throw ex
+                    if (currentBuild.result != null) {
+                        echo 'Failure during testing: ' + ex.toString()
+                        emailext subject: '$JOB_NAME $BUILD_NUMBER tests have failed',
+                        body: 'Your build $JOB_NAME $BUILD_NUMBER has failing tests $BUILD_URL/console', 
+                        to: notificationSendToID
+                        throw ex
+                    }
                 }
             }
         }
     }
-    stage('Merge'){
+    stage('Merge Branch'){
         steps{
 
             echo 'Perform Merge'
@@ -61,7 +52,7 @@ pipeline {
                     //     echo "Setting the timeout for 1 min.."
                     //     retry(10) {
                     //         echo "Merge is still being performed. Retrying..."
-                 //         sh './gradlew getMergeStatus -Pbranches=' + branchName
+                    sh './gradlew getMergeStatus -Pbranches=' + branchName
                     //         echo "Merge Status : " + env.MERGE_STATUS
                     //         sleep(time: 30, unit: 'SECONDS')
                     //     }
@@ -80,11 +71,11 @@ pipeline {
     stage('Continuous Integration') {
         steps {
 
-            echo 'Starting CI..'
-            sh  'pwd'
-            sh './gradlew exportApplication'
+            sh 'echo Exporting application from Dev environment $DEV_ENV'
+            sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$DEV_ENV/PRRestService -Dpega.rest.username=$PIPELINE_USER -Dpega.rest.password=$PIPELINE_USER_PASSWORD -Dexport.archiveName=$APPLICATION_NAME_$APPLICATION_VERSION.zip -Dexport.applicationName=$APPLICATION_NAME -Dexport.applicationVersion=$APPLICATION_VERSION -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'                
+            sh 'ls -lh $WORKSPACE/export'
 
-            
+
         }
 
     }
