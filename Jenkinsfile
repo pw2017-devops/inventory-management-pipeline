@@ -1,7 +1,7 @@
 
 pipeline {
-
-    agent any 
+    agent any;
+    
     stages {
         stage('Branch Merge Conflicts'){
             steps {
