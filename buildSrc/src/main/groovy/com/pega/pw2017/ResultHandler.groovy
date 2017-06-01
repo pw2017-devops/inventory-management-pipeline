@@ -14,8 +14,6 @@ class ResultHandler {
 
     ResultHandler(Project project) {
         resultsDir = project.buildDir
-
-        println resultsDir.toString()
     }
 
     void putResult(String key, String value) {
