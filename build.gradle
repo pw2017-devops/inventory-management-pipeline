@@ -31,9 +31,13 @@ ext {
 
 def archiveName = project.applicationName + '_' + project.applicationVersion
 def archiveNameWithExt = archiveName + '.zip'
-//def artifactoryArtifactSource = (new File(file(buildDir).toString() + '/artifact', archiveNameWithExt)).toString()
-def artifactoryArtifactSource = (new File(System.env.APPLICATION_ARCHIVE_LOCATION, archiveNameWithExt)).toString()
-
+def artifactoryArtifactSource = ''
+if (System.env.APPLICATION_ARCHIVE_LOCATION == null) {
+	artifactoryArtifactSource = (new File(file(buildDir).toString(), archiveNameWithExt)).toString()
+}
+else {
+	artifactoryArtifactSource = (new File(System.env.APPLICATION_ARCHIVE_LOCATION + '/exportArchive', archiveNameWithExt)).toString()
+}
 
 group = 'ims'
 version = applicationVersion + '_' + System.env.BUILD_NUMBER
