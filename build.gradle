@@ -5,14 +5,21 @@ buildscript {
 		maven {
 			url "https://plugins.gradle.org/m2/"
 		}
+		maven {
+			url "${" + System.getenv(ARTIFACTORY_URL) + "}/repo"
+		}
 	}
 	dependencies {
 		classpath "org._10ne.gradle:rest-gradle-plugin:0.4.2"
+		classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.1"
 	}
 }
 
+
+
 apply plugin: "base"
 apply plugin: "org.tenne.rest"
+apply plugin: "com.jfrog.artifactory"
 
 import com.pega.pw2017.ResultHandler
 
@@ -23,30 +30,30 @@ ext {
 	resultHandler = new ResultHandler(project)
 }
 
-task importApplication {
-	doLast{
-		println "Importing application"
-	}
-}
+// artifactory {
+//     //contextUrl = ${System.env.ARTIFACTORY_URL}
+//     contextUrl = 'https://artifactory-alexl-alexl.dev.pega.io/artifactory'
+//     publish {
+//         repository {
+//             repoKey = 'ims_dev_repo'
+//             username = project.artifactoryUser
+//             password = project.artifactoryPassword
+//             mavenCompatible = true
+//         }
+//         defaults {
+//             publications ('inventoryManagementSystem')
+//             properties = ['build': {System.env.BUILD_NUMBER}]
+//         }
+//         publishBuildInfo = true
+//         publishArtifacts = true
+//     }
+// }
+println project.applicationName
 
-task exportApplication {
-	doLast {
-		println "Exporting application"
-	}
-}
+//ant.properties.export.applicationName = project.applicationName
+//ant.properties.export.applicationVersion = project.applicationVersion
+//ant.properties.export.archiveName = project.applicationName + '_' + project.applicationVersion
 
-task importProduct {
-	doLast {
-		println "Importing product"
-
-	}
-}
-
-task exportProduct{
-	doLast {
-		println "Exporting product"
-	}
-}
 
 task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
@@ -167,7 +174,8 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 
 	httpMethod = 'get'
-	uri = "${targetURL}/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
+	//uri = "${targetURL}/api/v1/merges/${" + java.net.URLEncoder.encode(mergeId, "UTF-8") + "}" 
+	uri = "${targetURL}/api/v1/merges/${mergeId}"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
@@ -195,27 +203,46 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 
 	doFirst {
 		// Validate project properties
-		if (!project.hasProperty('targetURL')) {
-			throw new InvalidUserDataException("Must supply '-PtargetURL'")
+		if (!project.hasProperty("branch") || !project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-Pbranch' and '-PtargetURL'")
 		}
 	}
 }
 
-task executePegaUnitTests {
+task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Execute PegaUnit tests'
 
-	/*
-	doLast {
-		println "Executing PegaUnit tests for application : " + application
-		def responseJson = pegaUnitAPI(SOR_URL, accessGroup, testLocation, '')
+	def targetURL = findProperty("targetURL")
+	def accessGroup = findProperty('accessGroup')
+	def testSuite = findProperty('testSuite')
+	//println buildDir
+	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?LocationOfResults=" + java.net.URLEncoder.encode(file(buildDir).toString(), "UTF-8")
+	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
+	if (accessGroup != null) {
+		println uri
+		uri = uri + "&AccessGroup=" + java.net.URLEncoder.encode(accessGroup, "UTF-8")
+	}
+	if (testSuite) {
+		uri = uri + "&TestSuite=" + java.net.URLEncoder.encode(testSuite, "UTF-8")
+	}
+	
+	println uri
 
-		if (userNamePassword) {
-			ant.propertyfile(file: "gradle.properties") {
-				byte[] authEncBytes = Base64.encodeBase64(userNamePassword.getBytes());
-				String authStringEnc = new String(authEncBytes);
-				entry(key:"username_temp", value:authStringEnc)
+	username = project.pegaUsername
+	password = project.pegaPassword
 
-			}
+	httpMethod = 'post'
+	contentType = groovyx.net.http.ContentType.XML
+
+	responseHandler = { response ->
+		println "Successful test execution: ${response.toString()}"
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-PtargetURL'")
 		}
 	}
-	*/
 }
