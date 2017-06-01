@@ -205,14 +205,15 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 			//Merge Succesful
 			println "Merge is complete for '${mergeId}', Status Message: '${response.statusMessage}'"
 		} else {
+			println response.toString()
 			//Possible Conflicts?
-			println "Error while performing merge for: '${mergeId}'"
-			println "Errors: '${response.errors}'"
-			if((response.conflictsCount as int) > 0){
-				println "Conflicts: ${response.conflicts}"
-			}
-			//MERGE_STATUS = "Error"
-			throw new BuildCancelledException("Error while merging for '${mergeId}' '${response.statusMessage}'")
+//			println "Error while performing merge for: '${mergeId}'"
+//			println "Errors: '${response.errors}'"
+//			if((response.conflictsCount as int) > 0){
+//				println "Conflicts: ${response.conflicts}"
+//			}
+//			//MERGE_STATUS = "Error"
+//			throw new BuildCancelledException("Error while merging for '${mergeId}' '${response.statusMessage}'")
 		}
 	}
 
