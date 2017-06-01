@@ -14,8 +14,6 @@ buildscript {
 	}
 }
 
-
-
 apply plugin: "base"
 apply plugin: "org.tenne.rest"
 apply plugin: "com.jfrog.artifactory"
@@ -61,12 +59,9 @@ artifactory {
     }
 }
 
-clientConfig.info.setBuildName('new-strange-name')
-
 ant.properties['export.applicationName'] = project.applicationName
 ant.properties['export.applicationVersion'] = project.applicationVersion
 ant.properties['export.archiveName'] = project.applicationName + '_' + project.applicationVersion
-
 
 task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
@@ -183,12 +178,11 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
 	description 'Check merge status.'
 
-	def mergeId = resultHandler.getResult("merge.id")
+	def mergeId = resultHandler.getResult("merge.id") ?: ""
 	def targetURL = findProperty("targetURL")
 
 	httpMethod = 'get'
-	//uri = "${targetURL}/api/v1/merges/${" + java.net.URLEncoder.encode(mergeId, "UTF-8") + "}" 
-	uri = "${targetURL}/api/v1/merges/${mergeId}"
+	uri = "${targetURL}/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
@@ -240,8 +234,6 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 		uri = uri + "&TestSuite=" + java.net.URLEncoder.encode(testSuite, "UTF-8")
 	}
 	
-	println uri
-
 	username = project.pegaUsername
 	password = project.pegaPassword
 
