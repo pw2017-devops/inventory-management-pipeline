@@ -8,7 +8,7 @@ pipeline {
                 echo 'Determine Conflicts'
                 script {
                    try{
-                    sh './gradlew getConflicts -PtargetURL=' + env.PEGA_DEV + '-Pbranch=' + branchName
+                    sh './gradlew getConflicts -PtargetURL=' + env.PEGA_DEV + ' -Pbranch=' + branchName
                     
                     } catch (Exception ex) {
                         echo 'Failure during conflict detection: ' + ex.toString()
@@ -52,7 +52,7 @@ pipeline {
                     echo 'Perform Merge'
                     script {
                         try {
-                            sh './gradlew merge -PtargetURL=' + env.PEGA_DEV + '-Pbranches=' + branchName
+                            sh './gradlew merge -PtargetURL=' + env.PEGA_DEV + ' -Pbranches=' + branchName
                             echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
                             timeout(time: 5, unit: 'MINUTES') {
                                 echo "Setting the timeout for 1 min.."
@@ -84,7 +84,7 @@ pipeline {
 
                     echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
                     withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-                        sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$PEGA_DEV/PRRestService -Dpega.rest.username=$USERNAME -Dpega.rest.password=$PASSWORD'
+                        sh './gradlew performOperation -Pprpc.service.util.action=export -Ppega.rest.server.url=$PEGA_DEV/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'
 
                     }
                     sh './gradlew findArchive'
@@ -108,7 +108,7 @@ pipeline {
              echo 'Deploying to production : ' + env.PEGA_PROD
              withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
                sh './gradlew findArchive'
-               sh './gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=$PEGA_PROD/PRRestService -Dpega.rest.username=$USERNAME -Dpega.rest.password=$PASSWORD'                
+               sh './gradlew performOperation -Pprpc.service.util.action=import -Ppega.rest.server.url=$PEGA_PROD/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'                
 
            }
        }
