@@ -72,15 +72,20 @@ pipeline {
             }
         }
         
-        stage('Continuous Integration') {
+        stage('Publish to Artifactory') {
             steps {
 
               echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
               withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-                sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$PEGA_DEV/PRRestService -Dpega.rest.username=$username -Dpega.rest.password=$password -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'                
-                sh 'ls -lh $WORKSPACE/export'
+                sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$PEGA_DEV/PRRestService -Dpega.rest.username=$username -Dpega.rest.password=$password -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'
+
+                }
+                sh './gradlew findArchive'
+
+                echo 'Publishing to Artifactory '
+                sh './gradlew artifactoryPublish'
+        
             }
-        }
     }
 
     stage('Continuous Delivery') {

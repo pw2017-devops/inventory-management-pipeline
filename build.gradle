@@ -1,4 +1,3 @@
-//./gradlew getConflicts -Pbranches=FT-Rspec-Merge02
 
 buildscript {
 	repositories {
@@ -6,7 +5,7 @@ buildscript {
 			url "https://plugins.gradle.org/m2/"
 		}
 		maven {
-			url "${" + System.getenv(ARTIFACTORY_URL) + "}/repo"
+			url "${System.env.ARTIFACTORY_URL}/repo"
 		}
 	}
 	dependencies {
@@ -20,6 +19,7 @@ buildscript {
 apply plugin: "base"
 apply plugin: "org.tenne.rest"
 apply plugin: "com.jfrog.artifactory"
+apply plugin: 'maven-publish'
 
 import com.pega.pw2017.ResultHandler
 
@@ -30,29 +30,42 @@ ext {
 	resultHandler = new ResultHandler(project)
 }
 
-// artifactory {
-//     //contextUrl = ${System.env.ARTIFACTORY_URL}
-//     contextUrl = 'https://artifactory-alexl-alexl.dev.pega.io/artifactory'
-//     publish {
-//         repository {
-//             repoKey = 'ims_dev_repo'
-//             username = project.artifactoryUser
-//             password = project.artifactoryPassword
-//             mavenCompatible = true
-//         }
-//         defaults {
-//             publications ('inventoryManagementSystem')
-//             properties = ['build': {System.env.BUILD_NUMBER}]
-//         }
-//         publishBuildInfo = true
-//         publishArtifacts = true
-//     }
-// }
-println project.applicationName
+def artifactoryArtifactSource = (new File(buildDir, 'results.properties')).toString()
 
-//ant.properties.export.applicationName = project.applicationName
-//ant.properties.export.applicationVersion = project.applicationVersion
-//ant.properties.export.archiveName = project.applicationName + '_' + project.applicationVersion
+group = 'ims'
+version = applicationVersion + '_' + System.env.BUILD_NUMBER
+
+publishing {
+    publications {
+        main(MavenPublication) {
+            artifact file(artifactoryArtifactSource)
+        }
+    }
+}
+
+artifactory {
+    contextUrl = System.env.ARTIFACTORY_URL
+    publish {
+        repository {
+            repoKey = 'ims_dev_repo'
+            username = artifactoryUser
+            password = artifactoryPassword
+            mavenCompatible = true
+        }
+        defaults {
+            publications ('main')
+            properties = ['myprop': 'Linoy']
+        }
+        publishBuildInfo = true
+        publishArtifacts = true
+    }
+}
+
+clientConfig.info.setBuildName('new-strange-name')
+
+ant.properties['export.applicationName'] = project.applicationName
+ant.properties['export.applicationVersion'] = project.applicationVersion
+ant.properties['export.archiveName'] = project.applicationName + '_' + project.applicationVersion
 
 
 task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
@@ -217,11 +230,11 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def accessGroup = findProperty('accessGroup')
 	def testSuite = findProperty('testSuite')
 	//println buildDir
-	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?LocationOfResults=" + java.net.URLEncoder.encode(file(buildDir).toString(), "UTF-8")
-	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
+	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?LocationOfResults=" + java.net.URLEncoder.encode(file(buildDir).toString(), "UTF-8")
+	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
 	if (accessGroup != null) {
 		println uri
-		uri = uri + "&AccessGroup=" + java.net.URLEncoder.encode(accessGroup, "UTF-8")
+		uri = uri + "?AccessGroup=" + java.net.URLEncoder.encode(accessGroup, "UTF-8")
 	}
 	if (testSuite) {
 		uri = uri + "&TestSuite=" + java.net.URLEncoder.encode(testSuite, "UTF-8")
