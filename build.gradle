@@ -38,7 +38,7 @@ def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
 
 ant.properties['export.applicationName'] = project.applicationName
 ant.properties['export.applicationVersion'] = project.applicationVersion
-ant.properties['export.archiveName'] = archiveName
+ant.properties['export.archiveName'] = archiveNameWithExt
 ant.properties['service.responseartifacts.dir'] = exportFolder
 ant.properties['export.async']='false'
 ant.properties['import.async']='false'

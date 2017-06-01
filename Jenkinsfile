@@ -80,7 +80,7 @@ pipeline {
             steps {
                 echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
                 withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-                    sh './gradlew performOperation -Pprpc.service.util.action=export -Ppega.rest.server.url=$PEGA_DEV/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'
+                    sh "./gradlew performOperation -Pprpc.service.util.action=export -Ppega.rest.server.url=${env.PEGA_DEV}/PRRestService -Ppega.rest.username=${env.USERNAME} -Ppega.rest.password=${env.PASSWORD}"
                 }
 
                 echo 'Publishing to Artifactory '
