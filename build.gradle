@@ -1,31 +1,38 @@
 //./gradlew getConflicts -Pbranches=FT-Rspec-Merge02
 
-import groovy.json.JsonSlurper
-import groovy.transform.Field
+buildscript {
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "org._10ne.gradle:rest-gradle-plugin:0.4.2"
+	}
+}
+
+apply plugin: "base"
+apply plugin: "org.tenne.rest"
+
+import com.pega.pw2017.ResultHandler
 
 ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
 
-
-@Field String SOR_URL = 'http://localhost:9090'
-//@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
-//@Field String SOR_URL = 'http://192.168.99.100:9080'
-//@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
+ext {
+	resultHandler = new ResultHandler(project)
+}
 
 task importApplication {
 	doLast{
 		println "Importing application"
-
 	}
-
 }
 
 task exportApplication {
 	doLast {
 		println "Exporting application"
 	}
-	
-
 }
 
 task importProduct {
@@ -33,7 +40,6 @@ task importProduct {
 		println "Importing product"
 
 	}
-
 }
 
 task exportProduct{
@@ -42,87 +48,162 @@ task exportProduct{
 	}
 }
 
-task createRestorePoint {
-	doLast {
-		String rp = createRP(SOR_URL);
-		def rpFile = new File("restorepoint.txt");
-		rpFile.write(rp)
-	}
-}
+task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Create restore point.'
 
-task revertToLastRestorePoint {
-	doLast {
-		def rpFile = new File("restorepoint.txt");
-		String rpName = rpFile.readLines();
-		rollbackToRP(SOR_URL, rpName)
-	}
-}
+	def targetURL = findProperty("targetURL")
+	uri = "${targetURL}/PRRestService/SystemManagement/V2/RestorePoint"
 
-task getConflicts {
-	doLast {
-		def responseJson = branchesAPI(SOR_URL,branches,'conflicts')
-		//MERGE_CONFLICTS_COUNT = responseJson.conflictsCount
-		ant.propertyfile(file: "gradle.properties") {
-			entry(key:"mergeConflictsCount", value:responseJson.conflictsCount)
-		}
-		if(!responseJson.conflictsCount.equals("0")){
-			ant.propertyfile(file: "gradle.properties") {
-				entry(key:"mergeConflicts", value:responseJson.conflicts)
-			}
-			println 'Found conflicts ' + responseJson.conflicts
-			throw new BuildCancelledException('Number of conflicts : ' + responseJson.conflictsCount)
+	username = project.pegaUsername
+	password = project.pegaPassword
+
+	httpMethod = 'post'
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = { response ->
+		def restorepointName = response.pxRestorePoints[0].pxRestorePointName
+
+		resultHandler.putResult("restorepoint.name", restorepointName)
+		println "Success: ${response.toString()}"
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-PtargetURL'")
 		}
 	}
 }
 
-task merge {
-	doLast {
-		def responseJson = branchesAPI(SOR_URL,branches,'merge')
-		//MERGE_ID = responseJson.ID
-		ant.propertyfile(file: "gradle.properties") {
-			entry(key:"mergeId", value:responseJson.ID)
+task revertToLastRestorePoint(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Create restore point.'
+
+	def restorepointName = resultHandler.getResult("restorepoint.name")
+	def targetURL = findProperty("targetURL")
+	uri = "${targetURL}/PRRestService/SystemManagement/V2/rollback/${restorepointName}?action=SystemRollback"
+
+	username = project.pegaUsername
+	password = project.pegaPassword
+
+	httpMethod = 'post'
+	contentType = groovyx.net.http.ContentType.JSON
+
+	responseHandler = { response ->
+		println "Success: ${response.toString()}"
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-PtargetURL'")
 		}
-		//ant.properties['env.MERGE_ID'] = responseJson.ID
-		println 'Merge Response Queue ID : ' + responseJson.ID
 	}
 }
 
-task getMergeStatus {
-	doLast {
-		println "Trying to get merge status for : " + mergeId
-		def responseJson = mergesAPI(SOR_URL)
-		println "Get Merge Status Message : " + responseJson.statusMessage
-		if(responseJson.statusMessage.equals("Processing")){
+task getConflicts(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Check for branch conflict.'
+
+	def branch = findProperty("branch")
+	def targetURL = findProperty("targetURL")
+
+	httpMethod = 'get'
+	uri = "${targetURL}/api/v1/branches/${branch}/conflicts"
+
+	username = project.pegaUsername
+	password = project.pegaPassword
+
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = { response ->
+		if (response.conflictsCount as int == 0) {
+			println "No conflicts!"
+		} else {
+			println "Conflicts found: ${response.conflicts}"
+			throw new BuildCancelledException("Found '${response.conflictsCount}' conflicts.")
+		}
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty("branch") || !project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-Pbranch' and '-PtargetURL'")
+		}
+	}
+}
+
+task merge(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Merge a branch.'
+
+	def branch = findProperty("branch")
+	def targetURL = findProperty("targetURL")
+
+	httpMethod = 'get'
+	uri = "${targetURL}/api/v1/branches/${branch}/merge"
+
+	username = project.pegaUsername
+	password = project.pegaPassword
+
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = { response ->
+		resultHandler.putResult("merge.id", response.ID)
+		println "Merge Response Queue ID : $response.ID"
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty("branch") || !project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-Pbranch' and '-PtargetURL'")
+		}
+	}
+}
+
+task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Check merge status.'
+
+	def mergeId = resultHandler.getResult("merge.id")
+	def targetURL = findProperty("targetURL")
+
+	httpMethod = 'get'
+	uri = "${targetURL}/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
+
+	username = project.pegaUsername
+	password = project.pegaPassword
+
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = { response ->
+		resultHandler.putResult("merge.status", response.statusMessage)
+		if(response.statusMessage.equals("Processing")){
 			//Merge still Processing
-			ant.propertyfile(file: "gradle.properties") {
-				entry(key:"mergeStatus", value:responseJson.statusMessage)
-			}
-			//MERGE_STATUS = "Processing"
-			throw new BuildCancelledException('The merge status for ' + mergeId + 'is still ' + responseJson.statusMessage)
-		} else if (responseJson.statusMessage.equals("Success")){
+			throw new BuildCancelledException("The merge status for '${mergeId}' is still '${response.statusMessage}'.")
+		} else if (response.statusMessage.equals("Success")){
 			//Merge Succesful
-			ant.propertyfile(file: "gradle.properties") {
-				entry(key:"mergeStatus", value:responseJson.statusMessage)
-			}
-			//MERGE_STATUS = "Success"
-			println 'Merge is complete for : ' + mergeId + '.. Status Message : ' + responseJson.statusMessage
+			println "Merge is complete for '${mergeId}', Status Message: '${response.statusMessage}'"
 		} else {
 			//Possible Conflicts?
-			ant.propertyfile(file: "gradle.properties") {
-				entry(key:"mergeStatus", value:responseJson.statusMessage)
-			}
-			println 'Error while performing merge for :' + mergeId 
-			println 'Errors : ' + responseJson.errors
-			if(responseJson.conflictsCount > 0){
-				println 'Conflicts : ' + responseJson.conflicts
+			println "Error while performing merge for: '${mergeId}'"
+			println "Errors: '${response.errors}'"
+			if((response.conflictsCount as int) > 0){
+				println "Conflicts: ${response.conflicts}"
 			}
 			//MERGE_STATUS = "Error"
-			throw new BuildCancelledException('Error while merging for ' + mergeId + responseJson.statusMessage)
+			throw new BuildCancelledException("Error while merging for '${mergeId}' '${response.statusMessage}'")
+		}
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-PtargetURL'")
 		}
 	}
 }
 
 task executePegaUnitTests {
+
+	/*
 	doLast {
 		println "Executing PegaUnit tests for application : " + application
 		def responseJson = pegaUnitAPI(SOR_URL, accessGroup, testLocation, '')
@@ -136,115 +217,5 @@ task executePegaUnitTests {
 			}
 		}
 	}
-}
-
-/***** HELPERS *****/
-
-Object pegaUnitAPI(String url, String accessGroup, String locationOfTestResults, String testSuite){
-	String fullURL = url + '/prweb/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests'
-	// if (username) {
-	// 	def http = new RESTClient(fullURL)
-	// 	http.client.addRequestInterceptor(new HttpRequestInterceptor() {
- //    		void process(HttpRequest httpRequest, HttpContext httpContext) {
- //        		httpRequest.addHeader('Authorization', 'Basic ' + username.bytes.encodeBase64().toString())
- //    		}
-	// 	})
-	// 	def response = http.get(path: "aResource")
-	// 	return response
-	// } else {
-		return callRestAPI(openHttpConnectiontoExecuteTests(fullURL, accessGroup, locationOfTestResults, testSuite))
-}
-
-Object branchesAPI(String url, String context, String subresource){
-	String fullURL = url + '/prweb/api/v1/branches/' + context + '/' + subresource
-	return callRestAPI(openHttpConnection(fullURL))
-}
-
-Object mergesAPI(String url) {
-	String fullURL = url + '/prweb/api/v1/merges/' + mergeId
-	return callRestAPI(openHttpConnection(fullURL))
-}
-
-Object createRP(url) {
-	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/RestorePoint/';
-	HttpURLConnection httpConn = openHttpConnectionWithRequestParams(serviceUrl, "{\"action\":\"create\"}");
-	def resJson = callRestAPI(httpConn);	
-	String rpName = resJson.pxRestorePoints.pxRestorePointName;
-	rpName = strip(rpName);
-	println "Created restore point: " + rpName;
-	return rpName;
-}
-
-Object rollbackToRP(url, restorePointName) {
-	restorePointName = strip(restorePointName);
-	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/rollback/' + restorePointName + '?action=SystemRollback';
-	println serviceUrl;
-	HttpURLConnection httpConn = openHttpConnectionWithRequestParams(serviceUrl, "");
-	def resJson = callRestAPI(httpConn);
-	println resJson;
-	println "Rolledback to restore point: " + restorePointName;
-}
-
-HttpURLConnection openHttpConnectiontoExecuteTests(url, String accessGroup, String locationOfTestResults, String testSuite){
-	HttpURLConnection httpConn = openHttpConnection(url);
-	httpConn.addRequestProperty("AccessGroup", accessGroup);
-	httpConn.addRequestProperty("LocationOfTestResults", locationOfTestResults);
-	httpConn.addRequestProperty("TestSuite", testSuite);
-	return httpConn;
-}
-
-HttpURLConnection openHttpConnection(url) {
-	HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();	
-	return httpConn;
-}
-
-HttpURLConnection openHttpConnectionWithRequestParams(url, requestParams) {
-	HttpURLConnection httpConn = openHttpConnection(url);
-	
-	String encoding = new sun.misc.BASE64Encoder().encode(username.getBytes());
-	httpConn.setRequestProperty("Authorization", "Basic " + encoding);
-	httpConn.setDoOutput(true);	
-	httpConn.setRequestProperty("Content-Type", "application/json");
-	httpConn.setRequestProperty("Accept", "application/json");
-	httpConn.setRequestMethod("POST");
-	
-	OutputStreamWriter wr = new OutputStreamWriter(httpConn.getOutputStream());
-	wr.write(requestParams);
-	wr.flush();
-	return httpConn;
-}
-
-String strip(str) {
-	str = str.replaceAll('\\[','');
-	str = str.replaceAll(']','');
-	return str;
-}
-
-Object callRestAPI(HttpURLConnection httpConn) {
-	String responseText;
-	//HttpURLConnection httpConn = (HttpURLConnection)(new URL(url)).openConnection();
-	// if (username) {
-	// 	def http = new RESTClient('')
- //    	http.headers['Authorization'] = 'Basic '+username.getBytes('iso-8859-1').encodeBase64()
- //    	println "HERE 3423"
-	// } else {
-	// 	byte[] authEncBytes = Base64.encodeBase64(username.getBytes());
-	// 	String authStringEnc = new String(authEncBytes);
- //    	httpConn.addRequestProperty("Authorization", "Basic " + authStringEnc);
- //    }
-
-	InputStream responseStream;
-	if (httpConn.getResponseCode() == 400 || httpConn.getResponseCode() == 404 || httpConn.getResponseCode() == 500) {
-		responseStream = httpConn.getErrorStream();
-	} else {
-		responseStream = httpConn.getInputStream();
-	}
-	responseText = responseStream.getText()
-	def responseJson = new JsonSlurper().parseText(responseText)
-	if(responseJson.errors){
-		//println "callRestAPI error :" + responseJson.errors
-		throw new BuildCancelledException("callRestAPI error :" + responseJson.errors.ID + "-" + responseJson.errors.message)
-	} else {
-		return responseJson
-	}
+	*/
 }
