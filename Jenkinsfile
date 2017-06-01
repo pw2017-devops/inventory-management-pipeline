@@ -8,7 +8,7 @@ pipeline {
                 echo 'Determine Conflicts'
                 script {
                    try{
-                    sh './gradlew getConflicts -PtargetURL=' + env.PEGA_DEV + '-Pbranches=' + branchName
+                    sh './gradlew getConflicts -PtargetURL=' + env.PEGA_DEV + '-Pbranch=' + branchName
                     
                     } catch (Exception ex) {
                         echo 'Failure during conflict detection: ' + ex.toString()
