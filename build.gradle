@@ -174,8 +174,7 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 
 	httpMethod = 'get'
-	//uri = "${targetURL}/api/v1/merges/${" + java.net.URLEncoder.encode(mergeId, "UTF-8") + "}" 
-	uri = "${targetURL}/api/v1/merges/${mergeId}"
+	uri = "${targetURL}/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
 
 	username = project.pegaUsername
 	password = project.pegaPassword
