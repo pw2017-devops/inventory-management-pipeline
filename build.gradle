@@ -218,8 +218,8 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 
 	doFirst {
 		// Validate project properties
-		if (!project.hasProperty("branch") || !project.hasProperty('targetURL')) {
-			throw new InvalidUserDataException("Must supply '-Pbranch' and '-PtargetURL'")
+		if (!project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-PtargetURL'")
 		}
 	}
 }
