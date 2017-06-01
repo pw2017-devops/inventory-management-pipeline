@@ -1,4 +1,3 @@
-
 pipeline {
     agent any;
 
@@ -52,13 +51,13 @@ pipeline {
                     echo 'Perform Merge'
                     script {
                         try {
-                            sh './gradlew merge -PtargetURL=' + env.PEGA_DEV + ' -Pbranches=' + branchName
+                            sh './gradlew merge -PtargetURL=' + env.PEGA_DEV + ' -Pbranch=' + branchName
                             echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
                             timeout(time: 5, unit: 'MINUTES') {
                                 echo "Setting the timeout for 1 min.."
                                 retry(10) {
                                     echo "Merge is still being performed. Retrying..."
-                                    sh './gradlew getMergeStatus -Pbranches=' + branchName
+                                    sh './gradlew getMergeStatus -PtargetURL=' + env.PEGA_DEV
                                     echo "Merge Status : " + env.MERGE_STATUS
                                     //sleep(time: 30, unit: 'SECONDS')
                                 }
@@ -79,19 +78,13 @@ pipeline {
         
         stage('Publish to Artifactory') {
             steps {
-
-                withEnv([APPLICATION_ARCHIVE_LOCATION= env.WORKSPACE ]) {
-
-                    echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
-                    withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-                        sh './gradlew performOperation -Pprpc.service.util.action=export -Ppega.rest.server.url=$PEGA_DEV/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'
-
-                    }
-                    sh './gradlew findArchive'
-
-                    echo 'Publishing to Artifactory '
-                    sh './gradlew artifactoryPublish'
+                echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
+                withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh './gradlew performOperation -Pprpc.service.util.action=export -Ppega.rest.server.url=$PEGA_DEV/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'
                 }
+
+                echo 'Publishing to Artifactory '
+                sh './gradlew artifactoryPublish'
             }
         }
 
@@ -104,17 +97,12 @@ pipeline {
 
     stage('Deployment') {
         steps {
-            withEnv([APPLICATION_ARCHIVE_LOCATION= env.WORKSPACE]) {
              echo 'Deploying to production : ' + env.PEGA_PROD
              withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-               sh './gradlew findArchive'
-               sh './gradlew performOperation -Pprpc.service.util.action=import -Ppega.rest.server.url=$PEGA_PROD/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'                
-
-           }
+               sh './gradlew performOperation -Pprpc.service.util.action=import -Ppega.rest.server.url=$PEGA_PROD/PRRestService -Ppega.rest.username=$USERNAME -Ppega.rest.password=$PASSWORD'
+             }
        }
-
    }
 }
 
-}
 }

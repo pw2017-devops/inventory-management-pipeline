@@ -39,22 +39,11 @@ class ResultHandler {
 
     private void saveProperties() {
         def propertiesFile = new File(resultsDir, FILE_NAME)
-        insureFileExists(propertiesFile)
+        FileFinder.insureFileExists(propertiesFile)
         theProperties.store(propertiesFile.newWriter(), null)
     }
 
-    private void insureFileExists(File theFile) {
-        if (!theFile.exists()) {
-            File parentFile = theFile.getParentFile()
-            if (parentFile != null) {
-                parentFile.mkdirs()
-            }
-
-            theFile.createNewFile()
-        }
-    }
-
-    public Properties getTheProperties() {
+    Properties getTheProperties() {
         if (theProperties == null) {
             theProperties = new Properties()
         }

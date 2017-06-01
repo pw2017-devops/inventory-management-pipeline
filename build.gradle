@@ -20,32 +20,35 @@ apply plugin: "com.jfrog.artifactory"
 apply plugin: 'maven-publish'
 
 import com.pega.pw2017.ResultHandler
-ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
+import com.pega.pw2017.FileFinder
+
+// ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
-
-
 
 ext {
 	resultHandler = new ResultHandler(project)
 }
 
-def archiveName = project.applicationName + '_' + project.applicationVersion
-def archiveNameWithExt = archiveName + '.zip'
-def artifactoryArtifactSource = ''
-if (System.env.APPLICATION_ARCHIVE_LOCATION == null) {
-	artifactoryArtifactSource = (new File(file(buildDir).toString(), archiveNameWithExt)).toString()
-}
-else {
-	artifactoryArtifactSource = (new File(System.env.APPLICATION_ARCHIVE_LOCATION + '/exportArchive', archiveNameWithExt)).toString()
-}
-
 group = 'ims'
 version = applicationVersion + '_' + System.env.BUILD_NUMBER
+
+def archiveName = "${applicationName}_${applicationVersion}"
+def archiveNameWithExt = "${archiveName}.zip"
+def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
+
+ant.properties['export.applicationName'] = project.applicationName
+ant.properties['export.applicationVersion'] = project.applicationVersion
+ant.properties['export.archiveName'] = archiveName
+ant.properties['service.responseartifacts.dir'] = exportFolder
+ant.properties['export.async']='false'
+ant.properties['import.async']='false'
+//
+// ant.properties['import.archive.path']= '"' + System.env.APPLICATION_ARCHIVE_LOCATION + '/artifact"'
 
 publishing {
     publications {
         main(MavenPublication) {
-            artifact file(artifactoryArtifactSource)
+            artifact file(FileFinder.findFile(exportFolder, archiveNameWithExt))
         }
     }
 }
@@ -67,14 +70,6 @@ artifactory {
         publishArtifacts = true
     }
 }
-
-ant.properties['export.applicationName'] = project.applicationName
-ant.properties['export.applicationVersion'] = project.applicationVersion
-ant.properties['export.archiveName'] = archiveName
-ant.properties['service.responseartifacts.dir'] = '"' + System.env.APPLICATION_ARCHIVE_LOCATION + '"'
-ant.properties['export.async']='false'
-ant.properties['import.async']='false'
-ant.properties['import.archive.path']= '"' + System.env.APPLICATION_ARCHIVE_LOCATION + '/artifact"'
 
 task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
