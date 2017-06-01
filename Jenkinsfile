@@ -8,12 +8,9 @@ pipeline {
                 echo 'Determine Conflicts'
                 script {
                  try{
-                    //will need to redirect std:out using something like this
-                    //def out = sh script: './consoleOut.txt', returnStdout: true
-                    sh './gradlew getConflicts -Pbranches=' + branchName
-                    //Notify here if there are any conflicts
-                    //placeholder value for parsed number
-                    } catch (Exception ex) {
+                    sh './gradlew getConflicts -PtargetURL=' + env.PEGA_DEV + '-Pbranches=' + branchName
+                    
+                } catch (Exception ex) {
                         echo 'Failure during conflict detection: ' + ex.toString()
                         emailext subject: '$JOB_NAME $BUILD_NUMBER has failed',
                         body: 'Your build $JOB_NAME $BUILD_NUMBER has failed $BUILD_URL/console', 
@@ -24,7 +21,7 @@ pipeline {
 
             }
         }
-        stage('PegaUnit Tests'){
+        stage('Run unit tests'){
             steps {
                 echo 'Execute tests'
                 build 'ExecutePegaUnitTests'
@@ -47,19 +44,19 @@ pipeline {
                 echo 'Perform Merge'
                 script {
                     try {
-                        // sh './gradlew merge -Pbranches=' + branchName
-                        // echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
-                        // timeout(time: 5, unit: 'MINUTES') {
-                        //     echo "Setting the timeout for 1 min.."
-                        //     retry(10) {
-                        //         echo "Merge is still being performed. Retrying..."
-                        // sh './gradlew getMergeStatus -Pbranches=' + branchName
-                        //         echo "Merge Status : " + env.MERGE_STATUS
-                        //         sleep(time: 30, unit: 'SECONDS')
-                        //     }
-                        // }
+                        sh './gradlew merge -PtargetURL=' + env.PEGA_DEV + '-Pbranches=' + branchName
+                        echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
+                        timeout(time: 5, unit: 'MINUTES') {
+                            echo "Setting the timeout for 1 min.."
+                            retry(10) {
+                                echo "Merge is still being performed. Retrying..."
+                                sh './gradlew getMergeStatus -Pbranches=' + branchName
+                                echo "Merge Status : " + env.MERGE_STATUS
+                                sleep(time: 30, unit: 'SECONDS')
+                            }
+                        }
                     }  catch(ex){
-                        //Notify here if the merge fails
+                        //Notify  if the merge fails
                         echo 'Failure during merging: ' + ex.toString()
                         emailext subject: '$JOB_NAME $BUILD_NUMBER merge has failed',
                         body: 'Your build $BUILD_NUMBER has failed to merge due to: $ex $BUILD_URL/console', 
@@ -73,22 +70,31 @@ pipeline {
         stage('Continuous Integration') {
             steps {
 
-                sh 'echo Exporting application from Dev environment $DEV_ENV'
-                sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$DEV_ENV/PRRestService -Dpega.rest.username=$PIPELINE_USER -Dpega.rest.password=$PIPELINE_USER_PASSWORD -Dexport.archiveName=$APPLICATION_NAME_$APPLICATION_VERSION.zip -Dexport.applicationName=$APPLICATION_NAME -Dexport.applicationVersion=$APPLICATION_VERSION -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'                
-                sh 'ls -lh $WORKSPACE/export'
-
+              echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
+                withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$PEGA_DEV/PRRestService -Dpega.rest.username=$username -Dpega.rest.password=$password -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'                
+                    sh 'ls -lh $WORKSPACE/export'
+                }
             }
         }
         
         stage('Continuous Delivery') {
            steps {
-                echo 'Testing..'
+                echo 'Run regression tests'
+
             }
         }
 
         stage('Deployment') {
             steps {
-                echo 'Deploying....'
+                echo 'Deploying to production : ' + env.PEGA_PROD
+                withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh './gradlew findArchive'
+                    sh './gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=$PEGA_PROD/PRRestService -Dpega.rest.username=$USERNAME -Dpega.rest.password=$PASSWORD -Dexport.async=false -Dimport.archive.path=$WORKSPACE/destination"'                
+
+                }
+
+
             }
         }
     

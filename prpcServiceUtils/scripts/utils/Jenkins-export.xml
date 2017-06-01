@@ -1,6 +1,6 @@
 <project name="ExportImport" basedir="." default="exportprops"  xmlns:pega="pega:/pega.com" 
 												xmlns:ac="ac:/antcontrib.org">
-	<target name="copyArchive">
+	<target name="findArchive">
 		<property environment="env" />
 		<copy todir="/Users/alexl/PegaWorld-Bootcamp/pegaworlddevopspipeline/destination" flatten="true" overwrite="true">
 			<first count="1">
