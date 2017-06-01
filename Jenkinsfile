@@ -12,9 +12,10 @@ pipeline {
                     
                     } catch (Exception ex) {
                         echo 'Failure during conflict detection: ' + ex.toString()
-                        emailext subject: '$JOB_NAME $BUILD_NUMBER has failed',
-                        body: 'Your build $JOB_NAME $BUILD_NUMBER has failed $BUILD_URL/console', 
-                        to: notificationSendToID
+                        mail (  to: notificationSendToID,
+                                subject: '$JOB_NAME $BUILD_NUMBER has failed',
+                                body: 'Your build $JOB_NAME $BUILD_NUMBER has failed $BUILD_URL/console', 
+                              )
                         throw ex
                     }
                 }
@@ -34,15 +35,17 @@ pipeline {
                             step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
                             if (currentBuild.result != null) {
                                 echo 'Failure during testing: ' + ex.toString()
-                                emailext subject: '$JOB_NAME $BUILD_NUMBER tests have failed',
-                                body: 'Your build $JOB_NAME $BUILD_NUMBER has failing tests $BUILD_URL/console', 
-                                to: notificationSendToID
+                                mail (
+                                     subject: '$JOB_NAME $BUILD_NUMBER tests have failed',
+                                     body: 'Your build $JOB_NAME $BUILD_NUMBER has failing tests $BUILD_URL/console', 
+                                     to: notificationSendToID
+                                     )
                                 throw ex
                             }
                         }
                     }
                 }
-
+            }
         stage('Merge Branch'){
             steps{
 
@@ -63,9 +66,11 @@ pipeline {
                     }  catch(ex){
                         //Notify  if the merge fails
                         echo 'Failure during merging: ' + ex.toString()
-                        emailext subject: '$JOB_NAME $BUILD_NUMBER merge has failed',
-                        body: 'Your build $BUILD_NUMBER has failed to merge due to: $ex $BUILD_URL/console', 
-                        to: notificationSendToID
+                        mail (
+                             subject: '$JOB_NAME $BUILD_NUMBER merge has failed',
+                             body: 'Your build $BUILD_NUMBER has failed to merge due to: $ex $BUILD_URL/console', 
+                             to: notificationSendToID
+                             )
                         throw ex
                     }
                 }
@@ -75,9 +80,11 @@ pipeline {
         stage('Publish to Artifactory') {
             steps {
 
+                sh 'export APPLICATION_ARCHIVE_LOCATION=' + env.WORKSPACE + '/exportArchive'
+
                 echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
                 withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-                sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$PEGA_DEV/PRRestService -Dpega.rest.username=$username -Dpega.rest.password=$password -Dexport.async=false -Dservice.responseartifacts.dir=$WORKSPACE/export"'
+                sh './gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=$PEGA_DEV/PRRestService -Dpega.rest.username=$USERNAME -Dpega.rest.password=$PASSWORD'
 
                 }
                 sh './gradlew findArchive'
@@ -100,7 +107,7 @@ pipeline {
                echo 'Deploying to production : ' + env.PEGA_PROD
               withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
                  sh './gradlew findArchive'
-                 sh './gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=$PEGA_PROD/PRRestService -Dpega.rest.username=$USERNAME -Dpega.rest.password=$PASSWORD -Dexport.async=false -Dimport.archive.path=$WORKSPACE/destination"'                
+                 sh './gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=$PEGA_PROD/PRRestService -Dpega.rest.username=$USERNAME -Dpega.rest.password=$PASSWORD'                
 
                 }
 
