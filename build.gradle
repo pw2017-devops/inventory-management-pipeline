@@ -7,7 +7,7 @@ ant.importBuild 'prpcServiceUtils/scripts/utils/Jenkins-export.xml'
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
 
 
-@Field String SOR_URL = 'http://localhost:9090'
+@Field String SOR_URL = 'http://vengwindb240:9891'
 //@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
 //@Field String SOR_URL = 'http://192.168.99.100:9080'
 //@Field String SOR_URL = 'https://pizzasor.dev.pega.io'
@@ -55,6 +55,14 @@ task revertToLastRestorePoint {
 		def rpFile = new File("restorepoint.txt");
 		String rpName = rpFile.readLines();
 		rollbackToRP(SOR_URL, rpName)
+	}
+}
+
+task updateAccessGroups {
+	doLast {
+		String applicationName = "BuildSmokeApp";
+		String newAppVersion = "01.01.01";
+		updateAG(SOR_URL, applicationName, newAppVersion);
 	}
 }
 
@@ -183,6 +191,16 @@ Object rollbackToRP(url, restorePointName) {
 	def resJson = callRestAPI(httpConn);
 	println resJson;
 	println "Rolledback to restore point: " + restorePointName;
+}
+
+Object updateAG(url, applicationName, newAppVersion) {
+	String serviceUrl = url +'/prweb/PRRestService/SystemManagement/V2/UpdateAccessGroup/';
+	String reqParams = "{\"applicationName\":\"" + applicationName + "\", \"applicationVersion\":\"" + newAppVersion + "\"}"
+	println reqParams;
+	HttpURLConnection httpConn = openHttpConnectionWithRequestParams(serviceUrl, reqParams);
+	def resJson = callRestAPI(httpConn);
+	println resJson;
+	println "Updated accessgroups: ";
 }
 
 HttpURLConnection openHttpConnectiontoExecuteTests(url, String accessGroup, String locationOfTestResults, String testSuite){
