@@ -63,7 +63,7 @@ pipeline {
                 echo 'Perform Merge' 
 
                 script {
-                    if "true".equals(env.PERFORM_MERGE) {;
+                    if ("true".equals(env.PERFORM_MERGE)) {;
                         try {
                             sh './gradlew merge -PtargetURL=' + env.PEGA_DEV + ' -Pbranch=' + branchName
                             echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
