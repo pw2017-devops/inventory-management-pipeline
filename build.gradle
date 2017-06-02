@@ -42,8 +42,7 @@ ant.properties['export.archiveName'] = archiveNameWithExt
 ant.properties['service.responseartifacts.dir'] = exportFolder
 ant.properties['export.async']='false'
 ant.properties['import.async']='false'
-//
-// ant.properties['import.archive.path']= '"' + System.env.APPLICATION_ARCHIVE_LOCATION + '/artifact"'
+ant.properties['import.archive.path']= exportFolder
 
 publishing {
     publications {
