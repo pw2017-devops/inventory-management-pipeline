@@ -39,7 +39,8 @@ version = applicationVersion + '_' + System.env.BUILD_NUMBER
 def archiveName = "${applicationName}_${applicationVersion}"
 def archiveNameWithExt = "${archiveName}.zip"
 def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
-def artifactLocation = System.env.ARTIFACTORY_URL
+def importFolder = FileFinder.insureDirectoryExists("${buildDir}/import")
+def artifactLocation = System.env.ARTIFACTORY_URL + '/ims_dev_prod/' + group + '/' + project.applicationName + '/' + version + '/' + archiveNameWithExt
 
 ant.properties['export.applicationName'] = project.applicationName
 ant.properties['export.applicationVersion'] = project.applicationVersion
@@ -47,7 +48,7 @@ ant.properties['export.archiveName'] = archiveNameWithExt
 ant.properties['service.responseartifacts.dir'] = exportFolder
 ant.properties['export.async']='false'
 ant.properties['import.async']='false'
-ant.properties['import.archive.path']= exportFolder
+ant.properties['import.archive.path']= importFolder
 
 publishing {
     publications {
@@ -68,12 +69,20 @@ artifactory {
         }
         defaults {
             publications ('main')
-            properties = ['myprop': 'Linoy']
         }
         publishBuildInfo = true
         publishArtifacts = true
     }
 }
+
+task fetchFromArtifactory(type Download) {
+
+    src 'http://www.example.com/index.html'
+    dest importFolder
+    
+
+}
+
 
 task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'

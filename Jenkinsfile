@@ -4,6 +4,12 @@ pipeline {
     stages {
         stage('Branch Merge Conflicts'){
             steps {
+                def exportDirExists = fileExists 'export'
+                if (exportDirExists) {
+                    dir('export') {
+                        deleteDir()
+                    }
+                }
                 echo 'Determine Conflicts'
                 script {
                    try{
@@ -29,7 +35,9 @@ pipeline {
                 script { 
                     try{
                         sh './gradlew executePegaUnitTests -PtargetURL=' + env.PEGA_DEV 
-
+                        
+                            if (currentBuild.result != null) {
+                            }
                         } catch (Exception ex) {
                             step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
                             if (currentBuild.result != null) {
@@ -43,7 +51,9 @@ pipeline {
                             }
                         }
                     }
+                    junit '**/*.xml'
                 }
+                
             }
             stage('Merge Branch'){
                 steps{
@@ -91,12 +101,20 @@ pipeline {
         stage('Continuous Delivery') {
            steps {
             echo 'Run regression tests'
+            echo 'Publish to production repository'
 
         }
     }
 
     stage('Deployment') {
         steps {
+             
+             echo 'Fetching application archive from Artifactory'
+             sh './gradlew fetchFromArtifactory'
+             
+             echo 'Creating restore point'
+             sh './gradlew createRestorePoint'
+
              echo 'Deploying to production : ' + env.PEGA_PROD
              withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
                 sh "./gradlew performOperation -Pprpc.service.util.action=import -Ppega.rest.server.url=${env.PEGA_PROD}/PRRestService -Ppega.rest.username=${env.USERNAME} -Ppega.rest.password=${env.PASSWORD}"
