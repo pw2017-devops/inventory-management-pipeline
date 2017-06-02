@@ -21,7 +21,7 @@ pipeline {
                         echo 'Failure during conflict detection: ' + ex.toString()
                         mail (  to: notificationSendToID,
                             subject: '$JOB_NAME $BUILD_NUMBER has failed',
-                            body: 'Your build ' + env.JOB_NAME ' + ' env.BUILD_NUMBER + ' has failed ' + env.BUILD_URL + '/console', 
+                            body: 'Your build ' + env.JOB_NAME  +  env.BUILD_NUMBER + ' has failed ' + env.BUILD_URL + '/console', 
                             )
                         throw ex
                     }
@@ -46,7 +46,7 @@ pipeline {
                                 echo 'Failure during testing: ' + ex.toString()
                                 mail (
                                  subject: '$JOB_NAME $BUILD_NUMBER tests have failed',
-                                 body: 'Your build ' + env.JOB_NAME ' + ' env.BUILD_NUMBER + ' has failing tests ' + env.BUILD_URL + '/console', 
+                                 body: 'Your build ' + env.JOB_NAME  +  env.BUILD_NUMBER + ' has failing tests ' + env.BUILD_URL + '/console', 
                                  to: notificationSendToID
                                  )
                                 throw ex
@@ -80,7 +80,7 @@ pipeline {
                              echo 'Failure during merging: ' + ex.toString()
                              mail (
                                 subject: '$JOB_NAME $BUILD_NUMBER merge has failed',
-                                body: 'Your build ' env.BUILD_NUMBER ' has failed to merge due to: ' + ex.toString() + '\n\n' + env.BUILD_URL + '/console', 
+                                body: 'Your build ' + env.BUILD_NUMBER + ' has failed to merge due to: ' + ex.toString() + '\n\n' + env.BUILD_URL + '/console', 
                                 to: notificationSendToID
                                 )
                              throw ex
@@ -108,7 +108,7 @@ pipeline {
                       passwordVariable: 'ARTIFACTORY_PASSWORD', 
                       usernameVariable: 'ARTIFACTORY_USER')
                    ]) {
-                    sh './gradlew artifactoryPublish -PartifactoryUser=${ARTIFACTORY_USER} -PartifactoryPassword=${ARTIFACTORY_PASSWORD}'
+                    sh "./gradlew artifactoryPublish -PartifactoryUser=${ARTIFACTORY_USER} -PartifactoryPassword=${ARTIFACTORY_PASSWORD}"
                 }
             }
         }
