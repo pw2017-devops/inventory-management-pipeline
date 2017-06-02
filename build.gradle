@@ -33,7 +33,7 @@ ext {
 	resultHandler = new ResultHandler(project)
 }
 
-//group = 'ims'
+group = 'dmorg'
 version = applicationVersion + '_' + System.env.BUILD_NUMBER
 
 def archiveName = "${applicationName}_${applicationVersion}"
