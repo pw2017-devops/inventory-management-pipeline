@@ -115,7 +115,7 @@ pipeline {
              sh './gradlew fetchFromArtifactory'
 
              echo 'Creating restore point'
-             sh './gradlew createRestorePoint'
+             sh './gradlew createRestorePoint -PtargetURL=' + env.PEGA_PROD 
 
              echo 'Deploying to production : ' + env.PEGA_PROD
              withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
