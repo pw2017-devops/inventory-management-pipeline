@@ -40,7 +40,9 @@ def archiveName = "${applicationName}_${applicationVersion}"
 def archiveNameWithExt = "${archiveName}.zip"
 def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
 def importFolder = FileFinder.insureDirectoryExists("${buildDir}/import")
-def artifactLocation = System.env.ARTIFACTORY_URL + '/ims_dev_prod/' + group + '/' + project.applicationName + '/' + version + '/' + archiveNameWithExt
+def artifactLocation = System.env.ARTIFACTORY_URL + '/ims_dev_repo/' + group + '/' + project.applicationName + '/' + version + '/' + project.applicationName + '-' + project.applicationVersion + '_' + System.env.BUILD_NUMBER + '.zip'
+//replace https with http since the download location does not require sign in
+artifactLocation = artifactLocation.replaceAll(/^https\:/, 'http:')
 
 ant.properties['export.applicationName'] = project.applicationName
 ant.properties['export.applicationVersion'] = project.applicationVersion
@@ -75,11 +77,13 @@ artifactory {
     }
 }
 
-task fetchFromArtifactory(type Download) {
+task fetchFromArtifactory(type: Download) {
+	group 'Pega'
+	description 'Fetch application archive from artifactory'
 
-    src 'http://www.example.com/index.html'
+	println 'Downloading artifact from : ' + artifactLocation
+    src artifactLocation
     dest importFolder
-    
 
 }
 

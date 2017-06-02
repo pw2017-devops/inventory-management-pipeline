@@ -4,10 +4,12 @@ pipeline {
     stages {
         stage('Branch Merge Conflicts'){
             steps {
-                def exportDirExists = fileExists 'export'
-                if (exportDirExists) {
-                    dir('export') {
-                        deleteDir()
+                script {
+                    def exportDirExists = fileExists env.WORKSPACE + '/build/export'
+                    if (exportDirExists) {
+                        dir(env.WORKSPACE + '/build/export') {
+                            deleteDir()
+                        }
                     }
                 }
                 echo 'Determine Conflicts'
@@ -51,7 +53,7 @@ pipeline {
                             }
                         }
                     }
-                    junit '**/*.xml'
+                   // junit '**/*.xml'
                 }
                 
             }
@@ -111,7 +113,7 @@ pipeline {
              
              echo 'Fetching application archive from Artifactory'
              sh './gradlew fetchFromArtifactory'
-             
+
              echo 'Creating restore point'
              sh './gradlew createRestorePoint'
 
