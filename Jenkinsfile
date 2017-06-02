@@ -119,7 +119,7 @@ pipeline {
 
              echo 'Deploying to production : ' + env.PEGA_PROD
              withCredentials([usernamePassword(credentialsId: 'IMS_PIPELINE_CREDENTIAL', passwordVariable: 'password', usernameVariable: 'username')]) {
-                sh "./gradlew performOperation -Pprpc.service.util.action=import -Ppega.rest.server.url=${env.PEGA_PROD}/PRRestService -Ppega.rest.username=${env.USERNAME} -Ppega.rest.password=${env.PASSWORD}"
+                sh "./gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=${env.PEGA_PROD}/PRRestService -Dpega.rest.username=${env.USERNAME} -Dpega.rest.password=${env.PASSWORD}"
              }
        }
    }
