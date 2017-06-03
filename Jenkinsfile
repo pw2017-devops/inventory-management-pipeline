@@ -45,13 +45,9 @@ pipeline {
                 //Notify here if the tests fail
                 script { 
                     try{
-                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PtestSuite=${smokeTestSuite} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
-                        step([$class: 'JUnitResultArchiver', testResults: '**/build/*.xml'])
-                        if (currentBuild.result != null) {
-                        }
+                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PtestSuite=${smokeTestSuite} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE}"
+                        junit '**/*.xml'
                         } catch (Exception ex) {
-                            step([$class: 'JUnitResultArchiver', testResults: '**/build/*.xml'])
-                            if (currentBuild.result != null) {
                                 echo 'Failure during testing: ' + ex.toString()
                                 mail (
                                  subject: "${JOB_NAME} ${BUILD_NUMBER} tests have failed",
@@ -62,7 +58,7 @@ pipeline {
                             }
                         }
                     }
-                    junit '**/*.xml'
+
                 }
             }
 
