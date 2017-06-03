@@ -15,7 +15,7 @@ buildscript {
 }
 
 plugins {
-    id "de.undercouch.download" version "3.2.0"
+	id "de.undercouch.download" version "3.2.0"
 }
 
 apply plugin: "base"
@@ -53,28 +53,28 @@ ant.properties['import.async']='false'
 ant.properties['import.archive.path']= importFolder
 
 publishing {
-    publications {
-        main(MavenPublication) {
-            artifact file(FileFinder.findFile(exportFolder, archiveNameWithExt))
-        }
-    }
+	publications {
+		main(MavenPublication) {
+			artifact file(FileFinder.findFile(exportFolder, archiveNameWithExt))
+		}
+	}
 }
 
 artifactory {
-    contextUrl = System.env.ARTIFACTORY_URL
-    publish {
-        repository {
-            repoKey = 'ims_dev_repo'
-            username = artifactoryUser
-            password = artifactoryPassword
-            mavenCompatible = true
-        }
-        defaults {
-            publications ('main')
-        }
-        publishBuildInfo = true
-        publishArtifacts = true
-    }
+	contextUrl = System.env.ARTIFACTORY_URL
+	publish {
+		repository {
+			repoKey = 'ims_dev_repo'
+			username = artifactoryUser
+			password = artifactoryPassword
+			mavenCompatible = true
+		}
+		defaults {
+			publications ('main')
+		}
+		publishBuildInfo = true
+		publishArtifacts = true
+	}
 }
 
 task fetchFromArtifactory(type: Download) {
@@ -82,10 +82,10 @@ task fetchFromArtifactory(type: Download) {
 	description 'Fetch application archive from artifactory'
 
 	println 'Downloading artifact from : ' + artifactLocation
-    src artifactLocation
-    username artifactoryUser
-    password artifactoryPassword
-    dest importFolder
+	src artifactLocation
+	username artifactoryUser
+	password artifactoryPassword
+	dest importFolder
 
 }
 
@@ -160,13 +160,13 @@ task getConflicts(type: org._10ne.gradle.rest.RestTask) {
 	responseHandler = { response ->
 		if (response.conflictsCount as int == 0) {
 			println "No conflicts!"
-		} else {
-			println "Conflicts found: ${response.conflicts}"
-			throw new BuildCancelledException("Found '${response.conflictsCount}' conflicts.")
+			} else {
+				println "Conflicts found: ${response.conflicts}"
+				throw new BuildCancelledException("Found '${response.conflictsCount}' conflicts.")
+			}
 		}
-	}
 
-	doFirst {
+		doFirst {
 		// Validate project properties
 		if (!project.hasProperty("branch") || !project.hasProperty('targetURL')) {
 			throw new InvalidUserDataException("Must supply '-Pbranch' and '-PtargetURL'")
@@ -220,10 +220,10 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 		if(response.statusMessage.equals("Processing")){
 			//Merge still Processing
 			throw new BuildCancelledException("The merge status for '${mergeId}' is still '${response.statusMessage}'.")
-		} else if (response.statusMessage.equals("Success")){
+			} else if (response.statusMessage.equals("Success")){
 			//Merge Succesful
 			println "Merge is complete for '${mergeId}', Status Message: '${response.statusMessage}'"
-		} else {
+			} else {
 			//Possible Conflicts?
 			println "Error while performing merge for: '${mergeId}'"
 			println "Errors: '${response.errors}'"
@@ -250,16 +250,16 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def testResultLocation = ""
 	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?AccessGroup=${accessGroup}&TestSuiteID=${testSuite}"
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
-	if (testSuite ! = null) || (accessGroup != null)  {
-		uri = uri + "?"
-		if (testSuite != null) {
-			uri = uri + "?TestSuiteID=${testSuite}"
-		}
-		if (accessGroup != null) {
-			println uri
-			uri = uri + "&AccessGroup=${accessGroup}"
-		}
+	
+	uri = uri + "?"
+	if (testSuite != null) {
+		uri = uri + "?TestSuiteID=${testSuite}"
 	}
+	if (accessGroup != null) {
+		println uri
+		uri = uri + "&AccessGroup=${accessGroup}"
+	}
+
 
 	
 	
