@@ -249,6 +249,7 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 	def accessGroup = findProperty('accessGroup')
 	def testSuite = findProperty('testSuite') ? '':smokeTestSuite
+	def testResultLocation = findProperty('testResultLocation') ? '':System.env.WORKSPACE
 	def testResultFile = new File("${findProperty('testResultLocation')}/${testResultFile}")
 
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
