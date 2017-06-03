@@ -6,8 +6,8 @@ pipeline {
             steps {
                 withCredentials([
                     usernamePassword(credentialsId: 'imsadmin', 
-                       passwordVariable: 'IMS_USER', 
-                       usernameVariable: 'IMS_PASSWORD')
+                     passwordVariable: 'IMS_USER', 
+                     usernameVariable: 'IMS_PASSWORD')
                     ]) {
                     script {
                         def exportDirExists = fileExists env.WORKSPACE + '/build/export'
@@ -19,7 +19,7 @@ pipeline {
                     }
                     echo 'Determine Conflicts'
                     script {
-                     try{
+                       try{
                         sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=imsadmin -PpegaPassword=devops"
 
                         } catch (Exception ex) {
@@ -37,31 +37,32 @@ pipeline {
         stage('Run unit tests'){
             steps {
                 echo 'Execute tests'
+
                 withCredentials([
                     usernamePassword(credentialsId: 'imsadmin', 
-                       passwordVariable: 'IMS_PASSWORD', 
-                       usernameVariable: 'IMS_USER')
+                     passwordVariable: 'IMS_PASSWORD', 
+                     usernameVariable: 'IMS_USER')
                     ]) {
                 //Notify here if the tests fail
                 script { 
                     try{
-                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PtestSuite=${smokeTestSuite} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE}"
-                        junit '**/*.xml'
+                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE}"
+                        step([$class: 'JUnitResultArchiver', testResults: '**/build/*.xml'])
+                        
                         } catch (Exception ex) {
-                                echo 'Failure during testing: ' + ex.toString()
-                                mail (
-                                 subject: "${JOB_NAME} ${BUILD_NUMBER} tests have failed",
-                                 body: 'Your build ' + env.JOB_NAME  +  env.BUILD_NUMBER + ' has failing tests ' + env.BUILD_URL + '/console', 
-                                 to: notificationSendToID
-                                 )
-                                throw ex
-                            }
+                            echo 'Failure during testing: ' + ex.toString()
+                            mail (
+                               subject: "${JOB_NAME} ${BUILD_NUMBER} tests have failed",
+                               body: 'Your build ' + env.JOB_NAME  +  env.BUILD_NUMBER + ' has failing tests ' + env.BUILD_URL + '/console', 
+                               to: notificationSendToID
+                               )
+                            throw ex
                         }
                     }
-
+                    junit '**/*.xml'
                 }
-            }
 
+            }
         }
         stage('Merge Branch'){
             steps{
@@ -69,8 +70,8 @@ pipeline {
                 echo 'Perform Merge' 
                 withCredentials([
                     usernamePassword(credentialsId: 'imsadmin', 
-                       passwordVariable: 'IMS_PASSWORD', 
-                       usernameVariable: 'IMS_USER')
+                     passwordVariable: 'IMS_PASSWORD', 
+                     usernameVariable: 'IMS_USER')
                     ]) {
                     script {
                         if ("true".equals(env.PERFORM_MERGE)) {;
@@ -106,8 +107,8 @@ pipeline {
             echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
             withCredentials([
                 usernamePassword(credentialsId: 'imsadmin', 
-                   passwordVariable: 'IMS_PASSWORD', 
-                   usernameVariable: 'IMS_USER')
+                 passwordVariable: 'IMS_PASSWORD', 
+                 usernameVariable: 'IMS_USER')
                 ]) {
                 sh "./gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=${env.PEGA_DEV}/PRRestService -Dpega.rest.username=${IMS_USER} -Dpega.rest.password=${IMS_PASSWORD}"
             }
@@ -119,10 +120,10 @@ pipeline {
 
             echo 'Publishing to Artifactory '
             withCredentials([
-               usernamePassword(credentialsId: 'artifactory', 
-                  passwordVariable: 'ARTIFACTORY_PASSWORD', 
-                  usernameVariable: 'ARTIFACTORY_USER')
-               ]) {
+             usernamePassword(credentialsId: 'artifactory', 
+              passwordVariable: 'ARTIFACTORY_PASSWORD', 
+              usernameVariable: 'ARTIFACTORY_USER')
+             ]) {
                 sh "./gradlew artifactoryPublish -PartifactoryUser=${ARTIFACTORY_USER} -PartifactoryPassword=${ARTIFACTORY_PASSWORD}"
             }
         }
@@ -157,8 +158,8 @@ pipeline {
         steps {
             withCredentials([
                 usernamePassword(credentialsId: 'imsadmin', 
-                   passwordVariable: 'IMS_PASSWORD', 
-                   usernameVariable: 'IMS_USER')
+                 passwordVariable: 'IMS_PASSWORD', 
+                 usernameVariable: 'IMS_USER')
                 ]) {
                 echo 'Creating restore point'
                 sh "./gradlew createRestorePoint -PtargetURL=${PEGA_PROD} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
@@ -169,8 +170,8 @@ pipeline {
         steps {
             withCredentials([
                 usernamePassword(credentialsId: 'imsadmin', 
-                   passwordVariable: 'IMS_PASSWORD', 
-                   usernameVariable: 'IMS_USER')
+                 passwordVariable: 'IMS_PASSWORD', 
+                 usernameVariable: 'IMS_USER')
                 ]) {
 
                 echo 'Deploying to production : ' + env.PEGA_PROD
