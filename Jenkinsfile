@@ -20,7 +20,7 @@ pipeline {
                     echo 'Determine Conflicts'
                     script {
                      try{
-                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -Pusername=${IMS_USER} -Ppassword{IMS_PASSWORD}"
+                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
 
                         } catch (Exception ex) {
                             echo 'Failure during conflict detection: ' + ex.toString()
@@ -45,7 +45,7 @@ pipeline {
                 //Notify here if the tests fail
                 script { 
                     try{
-                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PtestSuite=${smokeTestSuite} -Pusername=${IMS_USER} -Ppassword=${IMS_PASSWORD}"
+                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PtestSuite=${smokeTestSuite} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
                         
                         if (currentBuild.result != null) {
                         }
@@ -79,13 +79,13 @@ pipeline {
                     script {
                         if ("true".equals(env.PERFORM_MERGE)) {;
                             try {
-                                sh "./gradlew merge -PtargetURL=${env.PEGA_DEV} -Pbranch=${branchName} -Pusername=${IMS_USER} -Ppassword=${IMS_PASSWORD}"
+                                sh "./gradlew merge -PtargetURL=${env.PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
                                 echo 'Evaluating merge Id from gradle script = ' + env.MERGE_ID
                                 timeout(time: 5, unit: 'MINUTES') {
                                     echo "Setting the timeout for 1 min.."
                                     retry(10) {
                                         echo "Merge is still being performed. Retrying..."
-                                        sh "./gradlew getMergeStatus -PtargetURL=${env.PEGA_DEV} --Pusername=${IMS_USER} -Ppassword=${IMS_PASSWORD}"
+                                        sh "./gradlew getMergeStatus -PtargetURL=${env.PEGA_DEV} --PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
                                         echo "Merge Status : " + env.MERGE_STATUS
                                     }
                                 }
@@ -110,10 +110,10 @@ pipeline {
             echo 'Exporting application from Dev environment : ' + env.PEGA_DEV
             withCredentials([
                 usernamePassword(credentialsId: 'imsadmin', 
-                   passwordVariable: 'password', 
-                   usernameVariable: 'username')
+                   passwordVariable: 'IMS_PASSWORD', 
+                   usernameVariable: 'IMS_USER')
                 ]) {
-                sh "./gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=${env.PEGA_DEV}/PRRestService -Dpega.rest.username=${env.USERNAME} -Dpega.rest.password=${env.PASSWORD}"
+                sh "./gradlew performOperation -Dprpc.service.util.action=export -Dpega.rest.server.url=${env.PEGA_DEV}/PRRestService -Dpega.rest.username=${IMS_USER} -Dpega.rest.password=${IMS_PASSWORD}"
             }
         }
     }
@@ -165,7 +165,7 @@ pipeline {
                    usernameVariable: 'IMS_USER')
                 ]) {
                 echo 'Creating restore point'
-                sh "./gradlew createRestorePoint -PtargetURL=${PEGA_PROD} -Pusername=${IMS_USER} -Ppassword=${IMS_PASSWORD}"
+                sh "./gradlew createRestorePoint -PtargetURL=${PEGA_PROD} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
             }
         }
     }
