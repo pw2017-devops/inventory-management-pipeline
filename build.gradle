@@ -98,7 +98,7 @@ task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	uri = "${targetURL}/PRRestService/SystemManagement/V2/RestorePoint"
 
 	username = pegaUsername
-	password = pegaUsername
+	password = pegaPassword
 
 	httpMethod = 'post'
 	contentType = groovyx.net.http.ContentType.JSON
@@ -247,16 +247,21 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 	def accessGroup = findProperty('accessGroup')
 	def testSuite = findProperty('testSuite')
-	//println buildDir
-	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?LocationOfResults=" + java.net.URLEncoder.encode(file(buildDir).toString(), "UTF-8")
+	def testResultLocation = ""
+	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?AccessGroup=${accessGroup}&TestSuiteID=${testSuite}"
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
-	if (accessGroup != null) {
-		println uri
-		uri = uri + "?AccessGroup=" + java.net.URLEncoder.encode(accessGroup, "UTF-8")
+	if (testSuite ! = null) || (accessGroup != null)  {
+		uri = uri + "?"
+		if (testSuite != null) {
+			uri = uri + "?TestSuiteID=${testSuite}"
+		}
+		if (accessGroup != null) {
+			println uri
+			uri = uri + "&AccessGroup=${accessGroup}"
+		}
 	}
-	if (testSuite) {
-		uri = uri + "&TestSuite=" + java.net.URLEncoder.encode(testSuite, "UTF-8")
-	}
+
+	
 	
 	username = pegaUsername
 	password = pegaPassword
@@ -267,6 +272,9 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	responseHandler = { response ->
 		println "Successful test execution: ${response.toString()}"
 	}
+
+	//Archive the test results
+	step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
 
 	doFirst {
 		// Validate project properties
