@@ -20,7 +20,7 @@ pipeline {
                     echo 'Determine Conflicts'
                     script {
                      try{
-                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
+                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=imsadmin -PpegaPassword=devops"
 
                         } catch (Exception ex) {
                             echo 'Failure during conflict detection: ' + ex.toString()
@@ -46,11 +46,11 @@ pipeline {
                 script { 
                     try{
                         sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PtestSuite=${smokeTestSuite} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
-                        
+                        step([$class: 'JUnitResultArchiver', testResults: '**/build/*.xml'])
                         if (currentBuild.result != null) {
                         }
                         } catch (Exception ex) {
-                            step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+                            step([$class: 'JUnitResultArchiver', testResults: '**/build/*.xml'])
                             if (currentBuild.result != null) {
                                 echo 'Failure during testing: ' + ex.toString()
                                 mail (
@@ -178,7 +178,7 @@ pipeline {
                 ]) {
 
                 echo 'Deploying to production : ' + env.PEGA_PROD
-                sh "./gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=${env.PEGA_PROD}/PRRestService -Dpega.rest.username=${env.USERNAME} -Dpega.rest.password=${env.PASSWORD}"
+                sh "./gradlew performOperation -Dprpc.service.util.action=import -Dpega.rest.server.url=${env.PEGA_PROD}/PRRestService -Dpega.rest.username=${env.IMS_USER} -Dpega.rest.password=${env.IMS_PASSWORD}"
             }
         }
     }
