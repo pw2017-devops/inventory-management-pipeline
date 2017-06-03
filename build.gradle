@@ -26,6 +26,8 @@ apply plugin: "com.jfrog.artifactory"
 import com.pega.pw2017.ResultHandler
 import com.pega.pw2017.FileFinder
 import de.undercouch.gradle.tasks.download.Download
+import groovy.util.XmlSlurper
+import groovy.xml.XmlUtil
 
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
 
@@ -246,23 +248,18 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 
 	def targetURL = findProperty("targetURL")
 	def accessGroup = findProperty('accessGroup')
-	def testSuite = findProperty('testSuite')
-	def testResultLocation = ""
-	//uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?AccessGroup=${accessGroup}&TestSuiteID=${testSuite}"
+	def testSuite = findProperty('testSuite') ? '':smokeTestSuite
+	def testResultFile = new File("${buildDir}/${testResultFile}")
+
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
-	
-	uri = uri + "?"
 	if (testSuite != null) {
-		uri = uri + "?TestSuiteID=${testSuite}"
+		uri = uri + "?TestSuiteID=${java.net.URLEncoder.encode(testSuite, "UTF-8")}"
 	}
 	if (accessGroup != null) {
 		println uri
 		uri = uri + "&AccessGroup=${accessGroup}"
 	}
 
-
-	
-	
 	username = pegaUsername
 	password = pegaPassword
 
@@ -270,11 +267,14 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	contentType = groovyx.net.http.ContentType.XML
 
 	responseHandler = { response ->
-		println "Successful test execution: ${response.toString()}"
-	}
+		println "Successful test execution. Results are stored at : ${testResultFile.toString()} \n"
+		if (response != null) {
+			println "Test Results : ${response.toString()}"
+		}
+		testResultFile.write response.toString()
 
-	//Archive the test results
-	//step([$class: 'JUnitResultArchiver', testResults: '**/TEST-*.xml'])
+		
+		}
 
 	doFirst {
 		// Validate project properties
