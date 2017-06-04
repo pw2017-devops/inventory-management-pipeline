@@ -38,7 +38,7 @@ pipeline {
             steps {
                 echo 'Execute tests'
 
-                withEnv(['TESTRESULTSFILE="TestResult.xml"','TESTRESULTLOCATION=WORKSPACE']) {
+                withEnv(['TESTRESULTSFILE="TestResult.xml"']) {
                     withCredentials([
                         usernamePassword(credentialsId: 'imsadmin', 
                            passwordVariable: 'IMS_PASSWORD', 
@@ -47,9 +47,8 @@ pipeline {
                 //Notify here if the tests fail
                 script { 
                     try{
-                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${TESTRESULTLOCATION} -PtestResultFile=${TESTRESULTSFILE}"
-                        step([$class: 'JUnitResultArchiver', testResults: '${'])
-                        
+                        sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE} -PtestResultFile=${TESTRESULTSFILE}"
+
                         } catch (Exception ex) {
                             echo 'Failure during testing: ' + ex.toString()
                             mail (
@@ -59,8 +58,14 @@ pipeline {
                              )
                             throw ex
                         }
+                        finally {
+                            echo 'HEREHEREHERE'  + env.TESTRESULTSFILE
+                            //step([$class: 'JUnitResultArchiver', testResults: '**/*.xml'])
+                        }
                     }
-                    junit "${TESTRESULTSFILE}"
+                    
+
+                    junit "**/*.xml"
                 }
             }
         }
@@ -134,6 +139,8 @@ pipeline {
         steps {
             echo 'Run regression tests'
             echo 'Publish to production repository'
+            sh 'ls -lh export'
+            sh 'ls -lh import'
 
         }
     }

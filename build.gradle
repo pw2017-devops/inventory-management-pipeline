@@ -52,6 +52,8 @@ artifactLocation = artifactLocation.replaceAll(/^https\:/, 'http:')
 def exportAsyncSetting = findProperty("exportAsyncSetting") ?:defaultExportAsyncSetting
 def importAsyncSetting = findProperty("exportAsyncSetting") ?:defaultImportAsyncSetting
 
+group = artifactorGroup
+version = artifactVersion
 
 def exportFolder = findProperty("exportFolder") ?: FileFinder.insureDirectoryExists("${buildDir}/export")
 def importFolder = findProperty("importFolder") ?: FileFinder.insureDirectoryExists("${buildDir}/import")
@@ -94,6 +96,7 @@ artifactory {
 			repoKey = artifactoryRepoKey
 			username = artifactoryUser
 			password = artifactoryPassword
+
 			mavenCompatible = true
 		}
 		defaults {
