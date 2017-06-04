@@ -139,8 +139,7 @@ pipeline {
         steps {
             echo 'Run regression tests'
             echo 'Publish to production repository'
-            sh 'ls -lh export'
-            sh 'ls -lh import'
+
 
         }
     }
