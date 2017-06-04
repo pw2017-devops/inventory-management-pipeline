@@ -66,18 +66,18 @@ ant.properties['import.async']=importAsyncSetting
 ant.properties['import.archive.path']= importFolder
 
 
-println "\nBuildNumber : ${buildNumber}\n"
-println "applicationName : ${applicationName}\n"
-println "applicationVersion : ${applicationVersion}\n"
-println "artifactVersion : ${artifactVersion}\n"
-println "artifactoryURL : ${artifactoryURL}\n"
-println "artifactorGroup : ${artifactorGroup}\n"
-println "artifactoryRepoKey : ${artifactoryRepoKey}\n"
-println "archiveName : ${archiveName}\n"
-println "archiveNameWithExt : ${archiveNameWithExt}\n"
-println "artifactLocation : ${artifactLocation}\n"
-println "exportAsyncSetting : ${exportAsyncSetting}\n"
-println "importAsyncSetting : ${importAsyncSetting}\n"
+println "\nBuildNumber : ${buildNumber}"
+println "applicationName : ${applicationName}"
+println "applicationVersion : ${applicationVersion}"
+println "artifactVersion : ${artifactVersion}"
+println "artifactoryURL : ${artifactoryURL}"
+println "artifactorGroup : ${artifactorGroup}"
+println "artifactoryRepoKey : ${artifactoryRepoKey}"
+println "archiveName : ${archiveName}"
+println "archiveNameWithExt : ${archiveNameWithExt}"
+println "artifactLocation : ${artifactLocation}"
+println "exportAsyncSetting : ${exportAsyncSetting}"
+println "importAsyncSetting : ${importAsyncSetting}"
 
 publishing {
 	publications {
