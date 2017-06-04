@@ -124,8 +124,8 @@ task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 	uri = "${targetURL}/PRRestService/SystemManagement/V2/RestorePoint"
 
-	username = pegaUsername
-	password = pegaPassword
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
 
 	httpMethod = 'post'
 	contentType = groovyx.net.http.ContentType.JSON
@@ -134,6 +134,7 @@ task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 
 		resultHandler.putResult("restorepoint.name", restorepointName)
 		println "Success: ${response.toString()}"
+		println "\nRestore point for ${targetURL} generated :  ${restorepointName}"
 	}
 
 	doFirst {
@@ -146,20 +147,21 @@ task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 
 task revertToLastRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
-	description 'Create restore point.'
+	description 'Restore the pega environment to a particular restore point'
 
-	def restorepointName = resultHandler.getResult("restorepoint.name")
+	def restorepointName = findProperty('restorePointName') ?: resultHandler.getResult("restorepoint.name")
 	def targetURL = findProperty("targetURL")
 	uri = "${targetURL}/PRRestService/SystemManagement/V2/rollback/${restorepointName}?action=SystemRollback"
 
-	username = pegaUsername
-	password = pegaPassword
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
 
 	httpMethod = 'post'
 	contentType = groovyx.net.http.ContentType.JSON
 
 	responseHandler = { response ->
 		println "Success: ${response.toString()}"
+		println  "\nRestored system ${targetURL} to the restore point : ${restorePoint}"
 	}
 
 	doFirst {
@@ -180,8 +182,8 @@ task getConflicts(type: org._10ne.gradle.rest.RestTask) {
 	httpMethod = 'get'
 	uri = "${targetURL}/api/v1/branches/${branch}/conflicts"
 
-	username = findProperty(pegaUsername)
-	password = findProperty(pegaPassword)
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
@@ -211,8 +213,8 @@ task merge(type: org._10ne.gradle.rest.RestTask) {
 	httpMethod = 'get'
 	uri = "${targetURL}/api/v1/branches/${branch}/merge"
 
-	username = pegaUsername
-	password = pegaPassword
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
@@ -238,8 +240,8 @@ task getMergeStatus(type: org._10ne.gradle.rest.RestTask) {
 	httpMethod = 'get'
 	uri = "${targetURL}/api/v1/merges/${java.net.URLEncoder.encode(mergeId, "UTF-8")}"
 
-	username = pegaUsername
-	password = pegaPassword
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
@@ -286,8 +288,8 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 		uri = uri + "&AccessGroup=${accessGroup}"
 	}
 
-	username = pegaUsername
-	password = pegaPassword
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
 
 	httpMethod = 'post'
 	contentType = groovyx.net.http.ContentType.XML
