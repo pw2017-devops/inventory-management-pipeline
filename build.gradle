@@ -53,8 +53,8 @@ def exportAsyncSetting = findProperty("exportAsyncSetting") ?:defaultExportAsync
 def importAsyncSetting = findProperty("exportAsyncSetting") ?:defaultImportAsyncSetting
 
 
-def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
-def importFolder = FileFinder.insureDirectoryExists("${buildDir}/import")
+def exportFolder = findProperty("exportFolder") ?: FileFinder.insureDirectoryExists("${buildDir}/export")
+def importFolder = findProperty("importFolder") ?: FileFinder.insureDirectoryExists("${buildDir}/import")
 
 // Define ANT properties for the target defined in prpcServiceUtils
 ant.properties['export.applicationName'] = applicationName
@@ -91,7 +91,7 @@ artifactory {
 	contextUrl = artifactoryURL
 	publish {
 		repository {
-			repoKey = 'ims_dev_repo'
+			repoKey = artifactoryRepoKey
 			username = artifactoryUser
 			password = artifactoryPassword
 			mavenCompatible = true
