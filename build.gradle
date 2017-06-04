@@ -29,30 +29,55 @@ import de.undercouch.gradle.tasks.download.Download
 import groovy.util.XmlSlurper
 import groovy.xml.XmlUtil
 
+// Import the ANT targets defined in prpcServiceUtils for application import and export
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
 
 ext {
 	resultHandler = new ResultHandler(project)
 }
 
-group = 'dmorg'
-version = applicationVersion + '_' + System.env.BUILD_NUMBER
-
+// Define properties to be used later in later tasks
+def buildNumber = findProperty("buildNumber") ?:System.env.BUILD_NUMBER
+def applicationName = findProperty("applicationName") ?:defaultApplicationName
+def applicationVersion = findProperty("applicationVersion") ?:defaultApplicationVersion
+def artifactVersion = findProperty("artifactVersion") ?:applicationVersion + '_' + buildNumber
+def artifactoryURL = findProperty("artifactoryURL") ?:System.env.ARTIFACTORY_URL
+def artifactorGroup = findProperty("artifactoryGroup") ?:defaultArtifactoryGroup
+def artifactoryRepoKey = findProperty("artifactoryRepoKey") ?:defaultArtifactoryRepoKey
 def archiveName = "${applicationName}_${applicationVersion}"
 def archiveNameWithExt = "${archiveName}.zip"
-def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
-def importFolder = FileFinder.insureDirectoryExists("${buildDir}/import")
-def artifactLocation = System.env.ARTIFACTORY_URL + '/ims_dev_repo/' + group + '/' + project.applicationName + '/' + version + '/' + project.applicationName + '-' + project.applicationVersion + '_' + System.env.BUILD_NUMBER + '.zip'
+def artifactLocation = findProperty("artifactoryGroup") ?:"${artifactoryURL}/${artifactoryRepoKey}/${artifactorGroup}/${applicationName}/${artifactVersion}/${applicationName}-${applicationVersion}_${buildNumber}.zip"
 //replace https with http since the download location does not require sign in
 artifactLocation = artifactLocation.replaceAll(/^https\:/, 'http:')
+def exportAsyncSetting = findProperty("exportAsyncSetting") ?:defaultExportAsyncSetting
+def importAsyncSetting = findProperty("exportAsyncSetting") ?:defaultImportAsyncSetting
 
-ant.properties['export.applicationName'] = project.applicationName
-ant.properties['export.applicationVersion'] = project.applicationVersion
+
+def exportFolder = FileFinder.insureDirectoryExists("${buildDir}/export")
+def importFolder = FileFinder.insureDirectoryExists("${buildDir}/import")
+
+// Define ANT properties for the target defined in prpcServiceUtils
+ant.properties['export.applicationName'] = applicationName
+ant.properties['export.applicationVersion'] = applicationVersion
 ant.properties['export.archiveName'] = archiveNameWithExt
 ant.properties['service.responseartifacts.dir'] = exportFolder
-ant.properties['export.async']='false'
-ant.properties['import.async']='false'
+ant.properties['export.async']=exportAsyncSetting
+ant.properties['import.async']=importAsyncSetting
 ant.properties['import.archive.path']= importFolder
+
+
+println "\nBuildNumber : ${buildNumber}\n"
+println "applicationName : ${applicationName}\n"
+println "applicationVersion : ${applicationVersion}\n"
+println "artifactVersion : ${artifactVersion}\n"
+println "artifactoryURL : ${artifactoryURL}\n"
+println "artifactorGroup : ${artifactorGroup}\n"
+println "artifactoryRepoKey : ${artifactoryRepoKey}\n"
+println "archiveName : ${archiveName}\n"
+println "archiveNameWithExt : ${archiveNameWithExt}\n"
+println "artifactLocation : ${artifactLocation}\n"
+println "exportAsyncSetting : ${exportAsyncSetting}\n"
+println "importAsyncSetting : ${importAsyncSetting}\n"
 
 publishing {
 	publications {
@@ -63,7 +88,7 @@ publishing {
 }
 
 artifactory {
-	contextUrl = System.env.ARTIFACTORY_URL
+	contextUrl = artifactoryURL
 	publish {
 		repository {
 			repoKey = 'ims_dev_repo'
@@ -155,8 +180,8 @@ task getConflicts(type: org._10ne.gradle.rest.RestTask) {
 	httpMethod = 'get'
 	uri = "${targetURL}/api/v1/branches/${branch}/conflicts"
 
-	username = pegaUsername
-	password = pegaPassword
+	username = findProperty(pegaUsername)
+	password = findProperty(pegaPassword)
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
@@ -249,7 +274,7 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 	def accessGroup = findProperty('accessGroup')
 	def testSuite = findProperty('testSuite') ? '':project.smokeTestSuite
-	def testResultLocation = findProperty('testResultLocation') ? '':project.testResultFile
+	def testResultLocation = findProperty('testResultLocation') ?:project.testResultFile
 	def testResultFile = new File("${findProperty('testResultLocation')}/${testResultFile}")
 
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
