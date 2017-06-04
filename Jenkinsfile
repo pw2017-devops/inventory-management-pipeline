@@ -59,8 +59,7 @@ pipeline {
                             throw ex
                         }
                         finally {
-                            echo 'HEREHEREHERE'  + env.TESTRESULTSFILE
-                            //step([$class: 'JUnitResultArchiver', testResults: '**/*.xml'])
+                            step([$class: 'JUnitResultArchiver', testResults: '**/*.xml'])
                         }
                     }
                     
