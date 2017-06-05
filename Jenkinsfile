@@ -6,7 +6,7 @@ pipeline {
         stage('Check for merge conflicts'){
             steps {
                 echo ('Clear workspace')
-                dir ('export') {
+                dir ('build/export') {
                     deleteDir()
                 }
                 
