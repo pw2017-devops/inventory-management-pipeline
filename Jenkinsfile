@@ -64,7 +64,7 @@ pipeline {
                                 to: notificationSendToID
                                  )
                                echo "Stopping pipeline due to failing tests"
-                               input(input message: 'Ready to share tests have failed, would you like to abort the pipeline?')
+                               input(message: 'Ready to share tests have failed, would you like to abort the pipeline?')
                             }
                         }
                     }
