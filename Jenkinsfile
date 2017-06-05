@@ -66,7 +66,6 @@ pipeline {
                                echo "Stopping pipeline due to failing tests"
                                input(message: 'Ready to share tests have failed, would you like to abort the pipeline?')
                             }
-                        }
                     }
                     
 
