@@ -5,7 +5,9 @@ pipeline {
         stage('Check for merge conflicts'){
             steps {
                 echo ('Clear workspace')
-                deleteDir()
+                dir ('export') {}
+                    deleteDir()
+                }
                 withCredentials([
                     usernamePassword(credentialsId: 'imsadmin', 
                        passwordVariable: 'IMS_USER', 
