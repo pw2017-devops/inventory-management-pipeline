@@ -2,21 +2,15 @@ pipeline {
     agent any;
 
     stages {
-        stage('Branch Merge Conflicts'){
+        stage('Check for merge conflicts'){
             steps {
+                echo ('Clear workspace')
+                deleteDir()
                 withCredentials([
                     usernamePassword(credentialsId: 'imsadmin', 
                        passwordVariable: 'IMS_USER', 
                        usernameVariable: 'IMS_PASSWORD')
                     ]) {
-                    script {
-                        def exportDirExists = fileExists env.WORKSPACE + '/build/export'
-                        if (exportDirExists) {
-                            dir(env.WORKSPACE + '/build/export') {
-                                deleteDir()
-                            }
-                        }
-                    }
                     echo 'Determine Conflicts'
                     script {
                      try{
@@ -58,18 +52,30 @@ pipeline {
                              )
                             throw ex
                         }
-                        finally {
-                            step([$class: 'JUnitResultArchiver', testResults: '**/*.xml'])
-                        }
                     }
                     
 
                     junit "**/*.xml"
+                    script {
+                        if (currentBuild.result != null) {
+                               mail (
+                                subject: "${JOB_NAME} ${BUILD_NUMBER} tests have failed",
+                                body: 'Your build ' + env.JOB_NAME  +  env.BUILD_NUMBER + ' has failing tests ' + env.BUILD_URL + '/console', 
+                                to: notificationSendToID
+                                 )
+                               echo "Stopping pipeline due to failing tests"
+                               input(input message: 'Ready to share tests have failed, would you like to abort the pipeline?')
+                            }
+                        }
+                    }
+                    
+
                 }
             }
         }
     }
-    stage('Merge Branch'){
+    stage('Merge branch'){
+
         steps{
 
             echo 'Perform Merge' 
@@ -99,7 +105,7 @@ pipeline {
                                 body: 'Your build ' + env.BUILD_NUMBER + ' has failed to merge due to: ' + ex.toString() + '\n\n' + env.BUILD_URL + '/console', 
                                 to: notificationSendToID
                                 )
-                             throw ex
+     
                          }
                      }
                  }
@@ -121,6 +127,7 @@ pipeline {
     }
 
     stage('Publish to Artifactory') {
+
         steps {
 
             echo 'Publishing to Artifactory '
@@ -135,6 +142,7 @@ pipeline {
     }
 
     stage('Regression Tests') {
+
         steps {
             echo 'Run regression tests'
             echo 'Publish to production repository'
@@ -144,6 +152,7 @@ pipeline {
     }
 
     stage('Fetch from Artifactory') {
+
         steps {
 
             withCredentials([
@@ -161,6 +170,7 @@ pipeline {
         }
     }
     stage('Create restore point') {
+
         steps {
             withCredentials([
                 usernamePassword(credentialsId: 'imsadmin', 
@@ -173,6 +183,7 @@ pipeline {
         }
     }
     stage('Deploy to production') {
+ 
         steps {
             withCredentials([
                 usernamePassword(credentialsId: 'imsadmin', 
