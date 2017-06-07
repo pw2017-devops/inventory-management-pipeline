@@ -9,6 +9,26 @@ pipeline {
                 dir ('build/export') {
                     deleteDir()
                 }
+                withCredentials([
+                    usernamePassword(credentialsId: 'imsadmin', 
+                       passwordVariable: 'IMS_USER', 
+                       usernameVariable: 'IMS_PASSWORD')
+                    ]) {
+                    echo 'Determine Conflicts'
+                    script {
+                     try{
+                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
+
+                        } catch (Exception ex) {
+                            echo 'Failure during conflict detection: ' + ex.toString()
+                            mail (  to: notificationSendToID,
+                                subject: "${JOB_NAME} ${BUILD_NUMBER} has failed",
+                                body: 'Your build ' + env.JOB_NAME  +  env.BUILD_NUMBER + ' has failed ' + env.BUILD_URL + '/console', 
+                                )
+                            throw ex
+                        }
+                    }
+                }
                 
             }
         }
