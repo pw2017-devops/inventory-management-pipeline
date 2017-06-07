@@ -17,7 +17,7 @@ pipeline {
                     echo 'Determine Conflicts'
                     script {
                      try{
-                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
+                        sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=imsadmin -PpegaPassword=devops"
 
                         } catch (Exception ex) {
                             echo 'Failure during conflict detection: ' + ex.toString()
