@@ -24,7 +24,7 @@ pipeline {
                 }
 
                 echo 'Determine Conflicts'
-                sh "./gradlew getConflicts -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
+                sh "./gradlew getConflicts -Djava.io.tmpdir=${WORKSPACE}/tmp -PtargetURL=${PEGA_DEV} -Pbranch=${branchName} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD}"
             }
         }
 
