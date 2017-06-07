@@ -29,15 +29,21 @@ pipeline {
         }
 
         stage('Run unit tests'){
-            steps {
-                echo 'Execute tests'
+          steps {
+            echo 'Execute tests'
 
-                withEnv(['TESTRESULTSFILE="TestResult.xml"']) {
-                   sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE} -PtestResultFile=${TESTRESULTSFILE}"
-                        
-                   junit "TestResult.xml"
+            withEnv(['TESTRESULTSFILE="TestResult.xml"']) {
+              sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE} -PtestResultFile=${TESTRESULTSFILE}"
+                    
+              junit "TestResult.xml"
+
+              script {
+                if (currentBuild.result != null) {
+                  input(message: 'Ready to share tests have failed, would you like to abort the pipeline?')
                 }
+              }
             }
+          }
        }
 
        stage('Merge branch'){
