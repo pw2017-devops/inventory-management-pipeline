@@ -113,7 +113,7 @@ pipeline {
     failure {
       mail (
           subject: "${JOB_NAME} ${BUILD_NUMBER} merging branch ${branchName} has failed",
-          body: "Your build ${env.BUILD_NUMBER} has failed.  Find details at ${env.BUILD_DISPLAY_URL}", 
+          body: "Your build ${env.BUILD_NUMBER} has failed.  Find details at ${env.RUN_DISPLAY_URL}", 
           to: notificationSendToID
       )
     }   
