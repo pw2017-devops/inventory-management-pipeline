@@ -148,6 +148,34 @@ task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	}
 }
 
+task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
+	group 'Pega'
+	description 'Create restore point.'
+
+	def targetURL = findProperty("targetURL")
+	uri = "${targetURL}/PRRestService/SystemManagement/V2/RestorePoint"
+
+	username = findProperty('pegaUsername')
+	password = findProperty('pegaPassword')
+
+	httpMethod = 'post'
+	contentType = groovyx.net.http.ContentType.JSON
+	responseHandler = { response ->
+		def restorepointName = response.pxRestorePoints[0].pxRestorePointName
+
+		resultHandler.putResult("restorepoint.name", restorepointName)
+		println "Success: ${response.toString()}"
+		println "\nRestore point for ${targetURL} generated :  ${restorepointName}"
+	}
+
+	doFirst {
+		// Validate project properties
+		if (!project.hasProperty('targetURL')) {
+			throw new InvalidUserDataException("Must supply '-PtargetURL'")
+		}
+	}
+}
+
 task revertToLastRestorePoint(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
 	description 'Restore the pega environment to a particular restore point'
@@ -282,10 +310,7 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def testResultLocation = findProperty('testResultLocation') ?:project.testResultFile
 	def testResultFile = new File("${findProperty('testResultLocation')}/${testResultFile}")
 
-	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
-	if (testSuite != null) {
-		uri = uri + "?TestSuiteID=${java.net.URLEncoder.encode(testSuite, "UTF-8")}"
-	}
+	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?TestSuiteID=${java.net.URLEncoder.encode(testSuite, "UTF-8")}"
 	if (accessGroup != null) {
 		println uri
 		uri = uri + "&AccessGroup=${accessGroup}"
