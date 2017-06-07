@@ -279,15 +279,23 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	def targetURL = findProperty("targetURL")
 	def accessGroup = findProperty('accessGroup')
 	def testSuite = findProperty('testSuite') ? '':project.smokeTestSuite
-	def testResultLocation = findProperty('testResultLocation') ?:project.testResultFile
-	def testResultFile = new File("${findProperty('testResultLocation')}/${testResultFile}")
+	def testResultLocation = findProperty('testResultLocation') ?:project.testResultFileLocation
+	def testResultFile = findProperty('testResultFile') ?:project.testResultFile
+	def testResultFileHandle = ''
+	if (testResultLocation != null) {
+		 testResultFileHandle = new File("${testResultLocation}/${testResultFile}")
+	}
+	else {
+		 testResultFileHandle = new File("${testResultFile}")	
+	}
+    println "\nTest result file location - ${testResultFile}"
 
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests"
 	// Pass in testsutie
 	requestBody = [TestSuiteID: java.net.URLEncoder.encode(testSuite, "UTF-8")]
 	if (accessGroup != null) {
 		println uri
-		uri = uri + "&AccessGroup=${accessGroup}"
+		//uri = uri + "&AccessGroup=${accessGroup}"
 	}
 
 	username = findProperty('pegaUsername')
@@ -302,7 +310,7 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 		if (response != null) {
 			println "Test Results : ${response.toString()}"
 		}
-		testResultFile.write response.toString()
+		testResultFileHandle.write response.toString()
 
 		
 		}
