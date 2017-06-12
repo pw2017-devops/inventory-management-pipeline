@@ -1,8 +1,9 @@
 package com.pega.pw2017
 
-/**
- * Created by vagrant on 6/1/17.
- */
+/*
+* Copyright (c) 2017 and Confidential to Pegasystems Inc. All rights reserved.  
+*/ 
+
 class FileFinder {
 
     static String findFile(File baseDir, String fileName) {

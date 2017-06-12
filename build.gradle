@@ -1,3 +1,6 @@
+/* 
+* Copyright (c) 2017 and Confidential to Pegasystems Inc. All rights reserved.  
+*/ 
 
 buildscript {
 	repositories {
@@ -310,7 +313,7 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 		if (response != null) {
 			println "Test Results : ${response.toString()}"
 		}
-		testResultFileHandle.write response.toString()
+		testResultFileHandle.write "${response.toString()}"
 
 		
 		}
