@@ -9,7 +9,7 @@ This is an example implementation of a continuous delivery pipeline for a Pega a
 - *Continuous Delivery* - this is the section of the pipeline where the application archive stored in the repository from the earlier CI process is imported into a test environment for further regression and acceptance testing. In this example pipeline, this is represented by the "Regression Tests" stage.
 - *Continuous Deployment* - Here the pipeline will create a restore point in the application on the production environment prior to importing the application archive from the Artifactory repository. The production environment is expected to be configured with the appropriate production level settings.
 
-# **Notes** 
+# Notes 
 
 This is meant to be a example implementation to showcase how a continuous delivery or continuous deployment pipeline can be achieved using the out of the box APIs in the Pega 7 platform, in this example Pega 7.3 . As such there are a few shortcuts that have been taken such as
 - Only two environments are assumed, Dev and Prod, whereas a pipeline for a real application is likely to have multiple additional stages and environments. As such the Regression Tests stage is an empty stage that does not does not do anything. Similarly there is likely to be a Pre-prod or staging environment prior to deploying to a production environment
@@ -19,19 +19,19 @@ This is meant to be a example implementation to showcase how a continuous delive
 
 **This is just a starting point for your CI/CD pipelines and is meant to get you to start exploring how to enable such pipelines with Pega, the supplied ode is provided without any support. However this should be an excellent starting point to enable your teams to build a simple pipeline and grow in complexity over time**
 
-# *** Prerequisites*** 
+# Prerequisites
 - Jenkins: https://jenkins.io/download/
 - Artifactory: https://www.jfrog.com/open-source/
 - Pega 7.3 - this release is now GA and should be available. Please contact your appropriate Pega representative for further details or you can request personal edition that should be available to you as part of the Pega Developer Network
 - InventoryManagementSystem example application archive - https://pega.box.com/s/8eryj1qijd49dd6moi5dgtvf7xgm21cc
 
-# **Jenkins configuration**
+# Jenkins configuration
 In order for this pipeline to work in Jenkins, you need to configure a job in Jenkins that pulls this pipeline configuration defined in the Jenkinsfile. In order to do this, you need to the following plugins in Jenkins
-- Pipeline plugin  (allows the definition of a CI/CD pipeline in Jenkins)
-- Blue Ocean (pipeline visualizer)
-- Credential plugin  (to support passing in authenticaion credentials for https systems)
-- Build Authorization Token Root plugin (to allow remote triggering of Jeknins jobs)
-- Git plugin (in order to support pulling the code directly from the Git repository)
+- **Pipeline** plugin  (allows the definition of a CI/CD pipeline in Jenkins)
+- **Blue Ocean** (pipeline visualizer)
+- **Credentials** plugin  (to support passing in authenticaion credentials for https systems)
+- **Build Authorization Token Root** plugin (to allow remote triggering of Jeknins jobs)
+- **Git** plugin (in order to support pulling the code directly from the Git repository)
 
 Make sure to install all the associated plugins suggested when installing the above plugins to ensure that all the functionality is available. There is plenty of information on the web on how to install and configure these plugins.
 
@@ -56,7 +56,7 @@ Once all of the above have been configured, you need to now create a new Jenkins
 This should now be a fully configured Jenkins project ready to execute a build for the InventoryManagementPipeline application provided as part of the PegaWorld bootcamp.
 
 
-# **Artifactory configuration**
+# Artifactory configuration
 Once you have installed and configured Artifactory, the setup is pretty straightforward, all that is required is a repository that is named **ims_devel_repo**. This pipeline assumes a Maven style repository which should be an option for a standard Artifactory installation. Feel free to experiement with other types of repositories.
 
  
