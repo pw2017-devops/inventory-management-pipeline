@@ -59,20 +59,6 @@ This should now be a fully configured Jenkins project ready to execute a build f
 # **Artifactory configuration**
 Once you have installed and configured Artifactory, the setup is pretty straightforward, all that is required is a repository that is named **ims_devel_repo**. This pipeline assumes a Maven style repository which should be an option for a standard Artifactory installation. Feel free to experiement with other types of repositories.
 
-Presentation and Exercises
--                link - https://www.dropbox.com/sh/t8gspaf0sb9bq35/AABPBsAW75cO_2mA6m6NYnpfa?dl=0
-o   The exercise slides in the deck have been updated to indicate that you will need to setup your own Jenkins, Artifactory and Pega instances. I have provided links to resources below on how to achieve this setup.
- 
-Additional resources
-Here are some resource links to help you set up your own example pipeline similar to the one at the bootcamp
--               Pega - You can request a pre-release version of 7.3 through Pega Labs - https://pdn.pega.com/node/1288581
--               Jenkins - https://jenkins.io/download/
--               Artifactory OSS - https://www.jfrog.com/open-source/
--               Docker images of Pega 7 configured Tomcat and Postgres  (if you are interested in setting up a Dockerized image of Pega)
-o   Tomcat - https://github.com/pegasystems/docker-pega7-tomcat-ready
-o   Postgres - https://github.com/pegasystems/postgres-pljava-openjdk
--               GitHub location for the example pipeline code - https://github.com/pw2017-devops/inventory-management-pipeline
-o   There will be some additional updates over the coming week to include some README content and a few additional gradle tasks
  
 
 
