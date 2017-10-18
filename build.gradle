@@ -241,12 +241,16 @@ task merge(type: org._10ne.gradle.rest.RestTask) {
 
 	def branch = findProperty("branch")
 	def targetURL = findProperty("targetURL")
+	def mergePolicy = "Highest"  //Alternative is to set it to New to create new ruleset versions on each merge
 
 	httpMethod = 'get'
 	uri = "${targetURL}/api/v1/branches/${branch}/merge"
 
 	username = findProperty('pegaUsername')
 	password = findProperty('pegaPassword')
+	
+	// Pass in testsutie
+	requestBody = [TestSuiteID: java.net.URLEncoder.encode(mergePolicy, "UTF-8")]
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
