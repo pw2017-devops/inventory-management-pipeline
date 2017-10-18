@@ -250,7 +250,7 @@ task merge(type: org._10ne.gradle.rest.RestTask) {
 	password = findProperty('pegaPassword')
 	
 	// Pass in testsutie
-	requestBody = [TestSuiteID: java.net.URLEncoder.encode(mergePolicy, "UTF-8")]
+	requestBody = [mergePolicy: java.net.URLEncoder.encode(mergePolicy, "UTF-8")]
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
