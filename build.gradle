@@ -31,6 +31,7 @@ import com.pega.pw2017.FileFinder
 import de.undercouch.gradle.tasks.download.Download
 import groovy.util.XmlSlurper
 import groovy.xml.XmlUtil
+import groovy.io.FileType
 
 // Import the ANT targets defined in prpcServiceUtils for application import and export
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
@@ -114,6 +115,29 @@ task fetchFromArtifactory(type: Download) {
 	group 'Pega'
 	description 'Fetch application archive from artifactory'
 
+
+	// fetch all files in this folder
+	println "Bence: current files in importfolder:"
+	def list = []
+	def dir = new File(importFolder)
+	dir.eachFileRecurse (FileType.FILES) {
+		file ->
+	  	list << file
+	}
+	// print all files in folder
+	list.each {
+  	println it.path
+	}
+	
+	doFirst {
+		println 'First clean out import folder on the Jenkins system' +importFolder
+	  File folder = new File(importFolder)
+		folder.eachFileRecurse(FileType.FILES) {
+	    file ->
+	        file.delete()
+		}
+	}
+
 	println 'Downloading artifact from : ' + artifactLocation
 	src artifactLocation
 	username artifactoryUser
@@ -121,6 +145,8 @@ task fetchFromArtifactory(type: Download) {
 	dest importFolder
 
 }
+
+
 
 
 task createRestorePoint(type: org._10ne.gradle.rest.RestTask) {
