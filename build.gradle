@@ -249,6 +249,8 @@ task merge(type: org._10ne.gradle.rest.RestTask) {
 	username = findProperty('pegaUsername')
 	password = findProperty('pegaPassword')
 	
+	requestBody = [pxObjClass: 'Pega-API-CI-Branch',
+  				   pxRulesetPassword: 'pega']
 
 	contentType = groovyx.net.http.ContentType.JSON
 	responseHandler = { response ->
