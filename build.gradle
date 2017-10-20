@@ -32,6 +32,7 @@ import de.undercouch.gradle.tasks.download.Download
 import groovy.util.XmlSlurper
 import groovy.xml.XmlUtil
 import groovy.io.FileType
+import java.io.File
 
 // Import the ANT targets defined in prpcServiceUtils for application import and export
 ant.importBuild 'prpcServiceUtils/scripts/utils/prpcServiceUtilsWrapper.xml'
@@ -309,26 +310,31 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 	group 'Pega'
 	description 'Execute PegaUnit tests'
 
-	def targetURL = findProperty("targetURL")
-	def accessGroup = findProperty('accessGroup')
-	def testSuite = findProperty('testSuite') ? '':project.smokeTestSuite
-	def testResultLocation = findProperty('testResultLocation') ?:project.testResultFileLocation
+	def targetURL = findProperty('targetURL')
+	def accessGroup = findProperty('accessGroup') ?:project.defaultAccessGroup
+	def testSuite = findProperty('testSuite') ? '':project.regressionTestSuite
+	def testResultLocation = findProperty('testResultLocation') ?:System.getProperty("user.dir")
 	def testResultFile = findProperty('testResultFile') ?:project.testResultFile
-	def testResultFileHandle = ''
+	File testResultFileHandle
 	if (testResultLocation != null) {
-		 testResultFileHandle = new File("${testResultLocation}/${testResultFile}")
+		testResultFileHandle = new File("${testResultLocation}/${testResultFile}")
 	}
 	else {
-		 testResultFileHandle = new File("${testResultFile}")	
+		testResultFileHandle = new File("${testResultFile}")	
 	}
-    println "\nTest result file location - ${testResultFile}"
+	//create the file
+	testResultFileHandle.createNewFile()
+
+    println "\nTest result file location - ${testResultFileHandle.absolutePath}"
 
 	uri = "${targetURL}/PRRestService/PegaUnit/Rule-Test-Unit-Case/pzExecuteTests?TestSuiteID=${java.net.URLEncoder.encode(testSuite, "UTF-8")}"
-
+	
+	// Add the access group if it is specified
 	if (accessGroup != null) {
-		println uri
-		//uri = uri + "&AccessGroup=${accessGroup}"
+		uri = "${uri}&AccessGroup=${java.net.URLEncoder.encode(accessGroup, "UTF-8")}"
 	}
+
+	println "REST request: ${uri}"
 
 	username = findProperty('pegaUsername')
 	password = findProperty('pegaPassword')
