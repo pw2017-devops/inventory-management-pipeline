@@ -39,9 +39,10 @@ pipeline {
             withEnv(['TESTRESULTSFILE="TestResult.xml"']) {
               sh "./gradlew executePegaUnitTests -PtargetURL=${PEGA_DEV} -PpegaUsername=${IMS_USER} -PpegaPassword=${IMS_PASSWORD} -PtestResultLocation=${WORKSPACE} -PtestResultFile=${TESTRESULTSFILE}"
                     
-              junit "TestResult.xml"
+              junit(allowEmptyResults: true, testResults: ${WORKSPACE}/${TESTRESULTSFILE})
 
-              script {
+              script {s
+                sh "ls"
                 if (currentBuild.result != null) {
                   //input(message: 'Ready to share tests have failed, would you like to abort the pipeline?')
                 }
