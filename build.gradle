@@ -245,7 +245,7 @@ task merge(type: org._10ne.gradle.rest.RestTask) {
 	def mergePolicy = 'Highest'  //Alternative is to set it to New to create new ruleset versions on each merge
 
 	httpMethod = 'post'
-	uri = "${targetURL}/api/v1/branches/${branch}/?mergePolicy=${mergePolicy}"
+	uri = "${targetURL}/api/v1/branches/${branch}/merge?mergePolicy=${mergePolicy}"
 
 	username = findProperty('pegaUsername')
 	password = findProperty('pegaPassword')
@@ -312,7 +312,7 @@ task executePegaUnitTests(type: org._10ne.gradle.rest.RestTask) {
 
 	def targetURL = findProperty('targetURL')
 	def accessGroup = findProperty('accessGroup') ?:project.defaultAccessGroup
-	def testSuite = findProperty('testSuite') ? '':project.regressionTestSuite
+	def testSuite = findProperty('testSuite') ? '':project.smokeTestSuite
 	def testResultLocation = findProperty('testResultLocation') ?:System.getProperty("user.dir")
 	def testResultFile = findProperty('testResultFile') ?:project.testResultFile
 	File testResultFileHandle
