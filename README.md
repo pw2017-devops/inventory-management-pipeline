@@ -1,4 +1,4 @@
-# Example release pipeline for a Pega 7.3 application 
+# Example release pipeline for a Pega 7.3.1 application 
 
 <a href="https://www.pega.com">
 <img src="https://www.pega.com/profiles/pegasystems/themes/custom/pegas/pegakit/public/images/logos/pega-logo.svg" width="200" alt="Pegasystems"/>
@@ -11,7 +11,7 @@ This is an example implementation of a continuous delivery pipeline for a Pega a
 
 # Notes 
 
-This is meant to be a example implementation to showcase how a continuous delivery or continuous deployment pipeline can be achieved using the out of the box APIs in the Pega 7 platform, in this example Pega 7.3 . As such there are a few shortcuts that have been taken such as
+This is meant to be a example implementation to showcase how a continuous delivery or continuous deployment pipeline can be achieved using the out of the box APIs in the Pega 7 platform, in this example Pega 7.3.1 . As such there are a few shortcuts that have been taken such as
 - Only two environments are assumed, Dev and Prod, whereas a pipeline for a real application is likely to have multiple additional stages and environments. As such the Regression Tests stage is an empty stage that does not does not do anything. Similarly there is likely to be a Pre-prod or staging environment prior to deploying to a production environment
 - Only one binary repository is assumed, however it is likely that there is more than one repository, such as a development repository that stores the inital build (exported application archive) while it is being validated and then a production respository where the final validated build is stored and is considered the source for the production environments
 - This pipeline assumes that a *branchName* and a *notificationSendToID* has been specified as build parameters, see the section below around Jenkins configuration for more details
